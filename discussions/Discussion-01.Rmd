@@ -1,0 +1,113 @@
+---
+title: "Discussion 1"
+author: "Duubar Villalobos Jimenez"
+date: "February 1, 2018"
+output:
+  prettydoc::html_pretty:
+    highlight: github
+    theme: leonids
+    toc: yes
+  pdf_document: default
+  html_document: default
+subtitle: CUNY MSDS DATA 605
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# C17 † Page 42
+
+## Exercise
+
+Find all solutions to the system of linear equations. Use your favorite computing device to row-reduce the augmented matrices for the systems, and write the solutions as a set, using correct set notation.
+
+$−x_1 + 5x_2 = −8$
+
+$−2x_1 + 5x_2 + 5x_3 + 2x_4 = 9$
+
+$−3x_1 − x_2 + 3x_3 + x_4 = 3$
+
+$7x_1 + 6x_2 + 5x_3 + x_4 = 30$
+
+### Preparation
+
+In oder to solve this linear system, we need to set up our square matrix by taking the left side values from the equal sign and I will call it $C$; our right side values of the equal sign will be represented in a vector, I will call it $d$.
+
+```{r matrix-setup, include=TRUE, echo=TRUE, warning=FALSE, error=FALSE, cache=FALSE, message=FALSE}
+
+C = matrix(data = c(-1,-2,-3,7,5,5,-1,6,0,5,3,5,0,2,1,1), nrow=4, ncol = 4)
+d = c(-8,9,3,30)
+
+```
+
+Matrix $C$.
+
+```{r C_matrix, include=TRUE, echo=FALSE, warning=FALSE, error=FALSE, cache=FALSE, message=FALSE}
+
+C
+
+```
+
+Vector $d$.
+
+```{r d_vector, include=TRUE, echo=FALSE, warning=FALSE, error=FALSE, cache=FALSE, message=FALSE}
+
+d
+
+```
+
+### Solving in R using 'solve'
+
+We can solve this equation by using the following command.
+
+```{r matrix_solve, include=TRUE, echo=TRUE, warning=FALSE, error=FALSE, cache=FALSE, message=FALSE}
+
+solve(C,d)
+
+```
+
+#### Answer
+
+$$ S = \{(x_1 = 3, x_2 = -1, x_3 = 2, x_4 = 5)\}$$
+
+### Solving in R using 'Row Reduction' (Gauss-Jordan Elimination)
+
+For this, we need to use the package 'pracma'.
+
+```{r pracma, include=TRUE, echo=TRUE, warning=FALSE, error=FALSE, cache=FALSE, message=FALSE}
+
+#install.packages("pracma")
+library("pracma")
+
+```
+
+Setup into a single matrix, I will call it $G$.
+
+```{r pracma_setup, include=TRUE, echo=TRUE, warning=FALSE, error=FALSE, cache=FALSE, message=FALSE}
+
+G = matrix(data = c(-1,-2,-3,7,5,5,-1,6,0,5,3,5,0,2,1,1,-8,9,3,30), nrow=4, ncol = 5)
+
+```
+
+Representation of matrix $G$.
+
+```{r G_Matrix, include=TRUE, echo=FALSE, warning=FALSE, error=FALSE, cache=FALSE, message=FALSE}
+
+G
+
+```
+
+
+We can solve this equation by using the following command.
+
+```{r pracma_solve, include=TRUE, echo=TRUE, warning=FALSE, error=FALSE, cache=FALSE, message=FALSE}
+
+rref(G)
+
+```
+
+#### Answer
+
+$$ S = \{(x_1 = 3, x_2 = -1, x_3 = 2, x_4 = 5)\}$$
+
