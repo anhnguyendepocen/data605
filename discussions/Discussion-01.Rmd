@@ -3,12 +3,12 @@ title: "Discussion 1"
 author: "Duubar Villalobos Jimenez"
 date: "February 1, 2018"
 output:
+  pdf_document: default
+  html_document: default
   prettydoc::html_pretty:
     highlight: github
     theme: leonids
     toc: yes
-  pdf_document: default
-  html_document: default
 subtitle: CUNY MSDS DATA 605
 ---
 
@@ -18,15 +18,17 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # C17 † Page 42
 
+**Book:** Beezer: A First Course in Linear Algebra
+
 ## Exercise
 
 Find all solutions to the system of linear equations. Use your favorite computing device to row-reduce the augmented matrices for the systems, and write the solutions as a set, using correct set notation.
 
-$−x_1 + 5x_2 = −8$
+$-x_1 + 5x_2 = -8$
 
-$−2x_1 + 5x_2 + 5x_3 + 2x_4 = 9$
+$-2x_1 + 5x_2 + 5x_3 + 2x_4 = 9$
 
-$−3x_1 − x_2 + 3x_3 + x_4 = 3$
+$-3x_1 - x_2 + 3x_3 + x_4 = 3$
 
 $7x_1 + 6x_2 + 5x_3 + x_4 = 30$
 
@@ -43,17 +45,21 @@ d = c(-8,9,3,30)
 
 Matrix $C$.
 
-```{r C_matrix, include=TRUE, echo=FALSE, warning=FALSE, error=FALSE, cache=FALSE, message=FALSE}
+```{r C_matrix, include=TRUE, echo=FALSE, warning=FALSE, error=FALSE, cache=FALSE, message=FALSE, results='asis'}
+# http://markheckmann.github.io/mat2tex/
+#library(devtools)
+#install_github("markheckmann/mat2tex")
+library(mat2tex)
 
-C
-
+xx("C =", C)
 ```
+
 
 Vector $d$.
 
-```{r d_vector, include=TRUE, echo=FALSE, warning=FALSE, error=FALSE, cache=FALSE, message=FALSE}
+```{r d_vector, include=TRUE, echo=FALSE, warning=FALSE, error=FALSE, cache=FALSE, message=FALSE, results='asis'}
 
-d
+xx("d =", d)
 
 ```
 
@@ -63,7 +69,13 @@ We can solve this equation by using the following command.
 
 ```{r matrix_solve, include=TRUE, echo=TRUE, warning=FALSE, error=FALSE, cache=FALSE, message=FALSE}
 
-solve(C,d)
+S = solve(C,d)
+
+```
+
+```{r matrix_solved, include=TRUE, echo=FALSE, warning=FALSE, error=FALSE, cache=FALSE, message=FALSE, results='asis'}
+
+xx("S =", S)
 
 ```
 
@@ -92,18 +104,24 @@ G = matrix(data = c(-1,-2,-3,7,5,5,-1,6,0,5,3,5,0,2,1,1,-8,9,3,30), nrow=4, ncol
 
 Representation of matrix $G$.
 
-```{r G_Matrix, include=TRUE, echo=FALSE, warning=FALSE, error=FALSE, cache=FALSE, message=FALSE}
+```{r G_Matrix, include=TRUE, echo=FALSE, warning=FALSE, error=FALSE, cache=FALSE, message=FALSE, results='asis'}
 
-G
+xx("G =", G)
 
 ```
 
 
-We can solve this equation by using the following command.
+We can solve this equation by using the following command 'rref'.
 
 ```{r pracma_solve, include=TRUE, echo=TRUE, warning=FALSE, error=FALSE, cache=FALSE, message=FALSE}
 
-rref(G)
+G1 <- rref(G)
+
+```
+
+```{r pracma_solved, include=TRUE, echo=FALSE, warning=FALSE, error=FALSE, cache=FALSE, message=FALSE, results='asis'}
+
+xx("G1 =", G1)
 
 ```
 
@@ -111,3 +129,9 @@ rref(G)
 
 $$ S = \{(x_1 = 3, x_2 = -1, x_3 = 2, x_4 = 5)\}$$
 
+
+## Mat2Tex
+
+The above matrix representations were obtained thanks to Mat2Tex.
+
+The documentation can be found here: http://markheckmann.github.io/mat2tex/
