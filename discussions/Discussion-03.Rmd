@@ -1,0 +1,91 @@
+---
+title: "Discussion 3"
+author: "Duubar Villalobos Jimenez"
+date: "February 11, 2018"
+output:
+  prettydoc::html_pretty:
+    highlight: github
+    theme: leonids
+    toc: yes
+  pdf_document: default
+  html_document: default
+subtitle: CUNY MSDS DATA 605
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+#install.packages("install.load")
+library(install.load)
+install_load("pracma")
+```
+
+# C12 † Page 388
+
+**Book:** Beezer: A First Course in Linear Algebra
+
+## Exercise
+
+Find the characteristic polynomial of the matrix A.
+
+$$A = \begin{pmatrix}1&2&1&0\\  1&0&1&0\\  2&1&1&0\\  3&1&0&1\end{pmatrix}$$
+
+### Solution
+
+A characteristic polynomial of square matrix $A$ is defined as $f_A (\lambda) = \det \left(A-\lambda I\right)$ where $I$ is the identity matrix of same dimension as $A$.
+
+$$f_A (\lambda) =  \det \left(A-\lambda I\right)$$
+
+First, I will calculate $\left(A-\lambda I\right)$
+
+$$\begin{pmatrix}1&2&1&0\\ 1&0&1&0\\ 2&1&1&0\\ 3&1&0&1\end{pmatrix}- \lambda\begin{pmatrix}1&0&0&0\\ 0&1&0&0\\ 0&0&1&0\\ 0&0&0&1\end{pmatrix}=\begin{pmatrix}1- \lambda&2&1&0\\ 1&- \lambda&1&0\\ 2&1&1- \lambda&0\\ 3&1&0&1- \lambda\end{pmatrix}$$
+
+Now, I will proceed to find determinant $\left(A-\lambda I\right)$.
+
+$$\det \left(A-\lambda I\right) = \det \begin{pmatrix}1- \lambda&2&1&0\\ 1&- \lambda&1&0\\ 2&1&1- \lambda&0\\ 3&1&0&1- \lambda\end{pmatrix}$$
+
+By reducing the matrix to row echelon form, have :
+
+$$\det \left(A-\lambda I\right) = \det \begin{pmatrix}1- \lambda&2&1&0\\ 0&\frac{- \lambda-5}{- \lambda+1}&-\frac{3}{- \lambda+1}&- \lambda+1\\ 0&0&\frac{2\left(2 \lambda+3\right)}{ \lambda+5}&-\frac{- \lambda^3+2 \lambda^2+ \lambda-2}{- \lambda-5}\\ 0&0&0&-\frac{ \lambda^4-3 \lambda^3-2 \lambda^2+2 \lambda+2}{2\left(2 \lambda+3\right)}\end{pmatrix}$$
+
+Since the determinant of the matrix equals the diagonal product of the matrix.
+
+$$\det \left(A-\lambda I\right) = \left(1- \lambda\right)\frac{- \lambda-5}{- \lambda+1}\cdot \frac{2\left(2 \lambda+3\right)}{ \lambda+5}\left(-\frac{ \lambda^4-3 \lambda^3-2 \lambda^2+2 \lambda+2}{2\left(2 \lambda+3\right)}\right)$$
+
+By simpliying the above expression, we obtain as follows:
+
+$$\det \left(A-\lambda I\right) = \lambda^4-3\lambda^3-2\lambda^2+2\lambda+2$$
+
+Since $f_A (\lambda) =  \det \left(A-\lambda I\right)$
+
+
+The answer will be:
+
+$$f_A (\lambda) = \lambda^4-3\lambda^3-2\lambda^2+2\lambda+2$$
+
+
+## Solving in R
+
++ Defining Matrix
+
+```{r det, }
+# https://www.rdocumentation.org/packages/pracma/versions/1.9.9/topics/charpoly
+
+A <- matrix(data = c(1,2,1,0,
+                     1,0,1,0,
+                     2,1,1,0,
+                     3,1,0,1), ncol=4, byrow=TRUE)
+```
+
++ For this I will employ the charpoly function from the pracma library in R.
+
+```{r charpoly }
+charpoly(A, info = FALSE)
+```
+
+To interpret the answer, it will be as follows:
+
+$$f_A (\lambda) = \lambda^4-3\lambda^3-2\lambda^2+2\lambda+2$$
+
+
+
