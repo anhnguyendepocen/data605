@@ -1,0 +1,117 @@
+---
+title: "Discussion 4"
+author: "Duubar Villalobos Jimenez"
+date: "February 21, 2018"
+output:
+  prettydoc::html_pretty:
+    highlight: github
+    theme: leonids
+    toc: yes
+  pdf_document: default
+  html_document: default
+subtitle: CUNY MSDS DATA 605
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+#.libPaths()
+#.libPaths( c( .libPaths(), "/home/mydvadmin/anaconda3/lib/R/library") )
+
+#install.packages("install.load")
+library(install.load)
+install_load("pracma")
+```
+
+# C26 † Page 443
+
+**Book:** Beezer: A First Course in Linear Algebra
+
+## Exercise
+
+Verify that the function below is a linear transformation.
+
+$$T:P_2 \rightarrow C^2,   T \left( a + bx + cx^2 \right) = \begin{pmatrix}2a − b\\ b + c\end{pmatrix}$$
+
+### Solution
+
+For this, we need to verify the two defining conditions of a linear transformation; that is:
+
++ 1. $T(x + y) = T(x) + T(y)$
+
++ 2. $T( \alpha x) =  \alpha T(x)$
+
+
+First let's work on (1) $T(x + y) = T(x) + T(y)$.
+
+$$T(x + y) = T \left((a_1 + b_1x + c_1x^2) + (a_2 + b_2x + c_2x^2)\right)$$
+
+$$T(x + y) = T \left((a_1 + a_2) + (b_1 + b_2)x  + (c_1+ c_2)x^2\right)$$
+
+Let's define as follows:
+
+$a = a_1 + a_2$
+
+$b = b_1 + b_2$
+
+$c = c_1 + c_2$
+
+By making a substitution; we have as follows:
+
+$$T(x + y) = T \left((a) + (b)x  + (c)x^2\right)$$
+And by our given problem, we have as follows:
+
+$$T \left( a + bx + cx^2 \right) = \begin{pmatrix}2a − b\\ b + c\end{pmatrix}$$
+
+And by substituing back we have:
+
+$$T(x + y) =\begin{pmatrix}2(a_1 + a_2) − ( b_1 + b_2)\\ ( b_1 + b_2) +  (c_1 + c_2)\end{pmatrix}$$
+
+$$T(x + y) =\begin{pmatrix}(2a_1 + 2a_2) − ( b_1 + b_2)\\ ( b_1 + b_2) +  (c_1 + c_2)\end{pmatrix}$$
+
+$$T(x + y) =\begin{pmatrix}(2a_1 - b_1) + (2a_2 - b_2)\\ ( b_1 + c_1) +  (b_2 + c_2)\end{pmatrix}$$
+
+$$T(x + y) =\begin{pmatrix}(2a_1 - b_1) \\ ( b_1 + c_1) \end{pmatrix} + \begin{pmatrix} (2a_2 - b_2) \\ (b_2 + c_2)\end{pmatrix}$$
+
+$$T(x + y) =\begin{pmatrix}2a_1 - b_1 \\  b_1 + c_1 \end{pmatrix} + \begin{pmatrix} 2a_2 - b_2 \\ b_2 + c_2\end{pmatrix}$$
+
+$$T(x + y) = T \left( a_1 + b_1x + c_1x^2 \right) + T \left( a_2 + b_2x + c_2x^2 \right)$$
+
+
+$$T(x + y) = T(x) + T(y)$$
+
+
+This proof the first part of the definition is met.
+
+
+
+
+
+
+
+
+
+
+
+
+```{r}
+# https://www.image.ucar.edu/GSP/Software/Fields/Help/transformx.html
+#transformx
+```
+
+```{r}
+A <- matrix(data = c(2,-1,5,
+                     -4,2,-10), ncol=3, byrow=TRUE)
+A
+```
+
+```{r}
+#b <-transformx(A, scale.type = "unit.sd", x.center, x.scale)
+```
+
+```{r}
+
+```
+
+
+
