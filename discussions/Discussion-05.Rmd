@@ -1,0 +1,222 @@
+---
+title: "Discussion 5"
+author: "Duubar Villalobos Jimenez"
+date: "February 28, 2018"
+output:
+  pdf_document: default
+  prettydoc::html_pretty:
+    highlight: github
+    theme: leonids
+    toc: yes
+  html_document: default
+subtitle: CUNY MSDS DATA 605
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+#.libPaths()
+#.libPaths( c( .libPaths(), "/home/mydvadmin/anaconda3/lib/R/library") )
+
+#install.packages("install.load")
+library(install.load)
+install_load("pracma", "prettydoc")
+```
+
+# 5 † Page 13
+
+**Book:** Grinstead: Introduction to Probability
+
+## Exercise
+
+Consider the bet that all three dice will turn up sixes at least once in n rolls of three dice. Calculate $f(n)$, the probability of at least one triple-six when three dice are rolled n times. Determine the smallest value of n necessary for a favorable bet that a triple-six will occur when three dice are rolled n times. 
+
+(DeMoivre would say it should be about $216 \cdot log(2) = 149.7$ and so would answer 150—see Exercise 1.2.17. Do you agree with him?)
+
+### Solution
+
+For this, we could approach it in two different forms.
+
++ The probability of wining by having one six in one dice is as follows:
+
+For this, let's say $X$ will be the action of rolling the dice.
+
+Probability of Wining = $P(X = 6) = \frac{1}{6}$  
+
+OR  
+
+Probability of Wining = 1 - Probability of loosing.
+
+Probability of Wining = $1 - P(X \neq 6) = 1-\frac{5}{6}$
+
+From here, we can deduct as follows:
+
++ The probability of wining by having three sixes in one roll is as follows:
+
+$P(X_1 = 6) = \frac{1}{6}$ and
+
+$P(X_2 = 6) = \frac{1}{6}$ and 
+
+$P(X_3 = 6) = \frac{1}{6}$
+
+This means as follows:
+
+$P(X_1 = 6 \cap X_2 = 6 \cap X_2 = 6) = \frac{1}{6} \cdot \frac{1}{6} \cdot \frac{1}{6} = \frac{1}{6^3}$
+
+OR
+
+$1-P(X_1 \neq 6) = 1-\frac{5}{6}$ and 
+
+$1-P(X_2 \neq 6) = 1-\frac{5}{6}$ and
+
+$1-P(X_3 \neq 6) = 1-\frac{5}{6}$
+
+From here we can also deduct that the probability of winning can be as follows:
+
+Probability of wining = $\left ( 1-P(X_1 \neq 6) \right ) \cdot \left ( 1-P(X_2 \neq 6) \right ) \cdot \left ( 1-P(X_3 \neq 6) \right )$
+
+Probability of wining = $\left ( 1-\frac{5}{6} \right ) \cdot \left ( 1-\frac{5}{6} \right ) \cdot \left (1-\frac{5}{6} \right )$
+
+Probability of wining =  $\left ( 1-\frac{5}{6} \right )^3$
+
+Probability of wining =  $\left ( \frac{6}{6}-\frac{5}{6} \right )^3$
+
+Probability of wining =  $\left ( \frac{1}{6} \right )^3$
+
+Probability of wining =  $\frac{1}{6^3}$
+
+By creating a table of rolls, we can deduct as follows:
+
+```{r, echo=FALSE}
+n <- 6
+n_roll <- c()
+pX1 <- c()
+pX2 <- c()
+pX3 <- c()
+pXWin3_6 <- c()
+pCumXWin3_6 <- c()
+
+
+ for (i in 1:n){
+   n_roll[i] <- i
+   pX1[i] <- "1/6"
+   pX2[i] <- "1/6"
+   pX3[i] <- "1/6"
+   pXWin3_6[i] <- "1/6^3"
+   pCumXWin3_6[i] <- paste(i, "/6^3")
+ }
+
+   n_roll[n+1] <- "..."
+   pX1[n+1] <- "1/6"
+   pX2[n+1] <- "1/6"
+   pX3[n+1] <- "1/6"
+   pXWin3_6[n+1] <-  "1/6^3"
+   pCumXWin3_6[n+1] <- paste("...")
+   
+   n <- n+1
+   n_roll[n+1] <- "n"
+   pX1[n+1] <- "1/6"
+   pX2[n+1] <- "1/6"
+   pX3[n+1] <- "1/6"
+   pXWin3_6[n+1] <-  "1/6^3"
+   pCumXWin3_6[n+1] <- paste("n/6^3")
+
+pTable <- data.frame(n_roll, pX1, pX2, pX3, pXWin3_6, pCumXWin3_6)
+
+pTable
+```
+
+Based on the above table our probability of winning function will be as follows:
+
+$$f(n) = \frac{n}{6^3}$$
+
+And we want to know for which n, $f(n) > \frac{1}{2}$?
+
+for this, we solve the inequation as follows:
+
+$$ \frac{n}{6^3} > \frac{1}{2}$$
+
+$$ n > \frac{6^3}{2}$$
+
+$n > 108$
+
+Based on that; the smallest value of $n$ necessary for a favorable bet that a triple-six will occur when three dice are rolled $n$ times will be $109$ times.
+
+**Programing in R**
+
+```{r}
+f <- function(n){
+  f <- n / (6 ^ 3)
+  return(f)
+}
+```
+
+Let's generate a table of probabilities
+
+```{r}
+p <- function(n){
+  n_roll <- c()
+  fn <- c()
+  for (i in 1:n) {
+    n_roll[i] <- i
+    fn[i] <- f(i)
+  }
+  fn <- data.frame(n_roll, fn)
+  return(fn)
+}
+```
+
+Let's see our table for $n = 109$
+
+```{r}
+n <- 109
+pn <- p(n)
+pn[n,]
+```
+
+Table of probabilities:
+
+```{r}
+pn
+```
+
+### Just for fun
+
+Let's generate random picks for 3 dice 100000 times and see if at least one of those rolls get three sixes on the same "roll" before the 109 roll.
+
+```{r}
+n <- 109 # Minimum n required to get 3 sixes on the same roll
+
+roll_3_dice <- function(n){  
+  n_roll <- c()
+  X1 <- c()
+  X2 <- c()
+  X3 <- c()
+  pXWin3_6 <- c()
+  Win <- c()
+  for (i in 1:n){
+     n_roll[i] <- i
+     X1[i] <- as.numeric(round(runif(1, 1, 6),0))
+     X2[i] <- as.numeric(round(runif(1, 1, 6),0))
+     X3[i] <- as.numeric(round(runif(1, 1, 6),0))
+     pXWin3_6[i] <- as.numeric(X1[i]) + as.numeric(X2[i]) + as.numeric(X3[i]) # Maximum addition will be 18; this will mean triple 6 came up
+     if (pXWin3_6[i] == as.numeric(18)) {
+        Win[i] <- "YES"
+     }
+     else {
+       Win[i] <- "NO"
+     }
+  }
+  pTable <- data.frame(n_roll, X1, X2, X3, pXWin3_6, Win)
+  return(pTable)
+}
+```
+
+**Rolling 3 dice 100000 times.**
+
+```{r}
+results <- roll_3_dice(100000)
+subset(results, Win == "YES")
+```
+
+Let me know what you think.
