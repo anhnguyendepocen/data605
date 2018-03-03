@@ -1,0 +1,181 @@
+---
+title: "Homework 2"
+author: "Duubar Villalobos Jimenez"
+date: "February 10, 2018"
+output:
+  pdf_document: default
+  html_document: default
+  prettydoc::html_pretty:
+    highlight: github
+    theme: leonids
+    toc: yes
+subtitle: CUNY MSDS DATA 605
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+
+#install.packages("install.load")
+library(install.load)
+install_load("plyr", "dplyr", "pracma", "mat2tex")
+
+```
+
+# 1. Problem set 1
+
+
+## (1)
+**Show that $AA^T \neq A^TA$ in general. (Proof and demonstration.)**
+
+### Answer
+
++ Proof
+
+In order to proof, I will focus by checking the sizes of the matrices involved.
+
+First, lets define our $A$ matrix with a size $m \times n$.
+
+Where $1 \leq n, 1 \leq m$.
+
+By definition, its transpose $A^T$ has size $n \times  m$.
+
+a) By definition (matrix multiplication), we have that $AA^T$ has size $m \times n$ times $n \times m$ resulting in a matrix of size $m \times m$
+
+b) By definition (matrix multiplication), we have that $A^TA$ has size $n \times m$ times $m \times n$ resulting in a matrix of size $n \times n$
+
+Then, by comparing we conclude that the matrices have different sizes since $m$ is not necessarily the same as $n$.
+
++ Conclusion
+
+$AA^T \neq A^TA$
+
++ Demonstration
+
+
+$$A=\begin{pmatrix}1&4&-3\\ \:6&3&0\end{pmatrix}$$
+
+```{r vector_definitions, echo=TRUE}
+A <- matrix(c(1,4,-3,
+              6,3,0), ncol=3, byrow=TRUE)
+```
+
+Let's see  $A^T$.
+
+```{r, include=TRUE, echo=FALSE, warning=FALSE, error=FALSE, cache=FALSE, message=FALSE, results='asis'}
+xx("A^T =", t(A), digits=0)
+```
+
+Solving $AA^T$
+
+```{r, include=TRUE, echo=FALSE, warning=FALSE, error=FALSE, cache=FALSE, message=FALSE, results='asis'}
+aat <- xx("AA^T =", A %*% t(A), digits=0) 
+aat
+```
+
+Solving $A^TA$
+
+```{r, include=TRUE, echo=FALSE, warning=FALSE, error=FALSE, cache=FALSE, message=FALSE, results='asis'}
+ata <- xx("A^TA =", t(A) %*% A, digits=0) 
+ata
+```
+
+
+
+## (2)
+**For a special type of square matrix $A$, we get $A^TA = AA^T$ . Under what conditions could this be true? (Hint: The Identity matrix I is an example of such a matrix)**
+
+### Answer
+
+This condition could be true if $A$ is a Symmetric Matrix; that is $A = A^T$; and by $A$ being a symmetric matrix, then A is square $m \times m$ matrix.
+
+
+# 2. Problem set 2
+
+Write an R function to factorize a square matrix $A$ into LU or LDU, whichever you prefer.
+
+```{r}
+# Based matrix as example 3x3
+A1 <- matrix(c(1,4,-3,
+              6,3,0,
+              2,4,3), ncol=3, byrow=TRUE)
+
+# Based matrix as example 4x4
+A <- matrix(c(1,-2,-2,-3,
+              3,-9,0,-9,
+              -1,2,4,7,
+              -3,-6,26,2), ncol=4, byrow=TRUE)
+```
+
+*Building L*
+
+```{r}
+# Function that creates the Identity matrix in order to create our L matrix from it
+build_L <- function(A){
+  
+  L <- matrix(,nrow = dim(A)[1], ncol = dim(A)[1])
+  
+  for (i in 1:dim(A)[1]){
+       for (j in 1:dim(A)[1]){
+            L[i,j]<- 0 # Assign 0     
+       }
+      L[i,i]<- 1 # Assign 1 
+  }
+  return(L)
+}
+```
+
+*Finding LU*
+
+```{r}
+# Function that finds and return the LU matrices.
+find_LU <- function(U){
+  
+  L <- build_L(U) # Building L Matrix
+
+  # Procedure to find Upper and Lower Matrix
+  for (i in 1:dim(U)[1] ){
+       k <- i + 1
+       if (k <= dim(U)[1]) {
+         for (j in k:dim(U)[1]){
+
+            L[j,i] <- (U[j,i] / U[i,i]) 
+            U[j,] <- -1 * (U[j,i] / U[i,i]) * U[i,] + U[j,]
+  
+            #print(U)
+            #print(L)
+         }
+       }
+  }
+  LU <- list(U, L)
+  return(LU)
+}
+```
+
+```{r}
+LU <- find_LU(A)
+U <- matrix(unlist(LU[1]), ncol=dim(A)[1], nrow=dim(A)[1])
+L <- matrix(unlist(LU[2]), ncol=dim(A)[1], nrow=dim(A)[1])
+```
+
+### Original Matrix
+
+```{r, include=TRUE, echo=FALSE, warning=FALSE, error=FALSE, cache=FALSE, message=FALSE, results='asis'}
+A <- xx("A =", A, digits=0) 
+A
+```
+
+
+### Lower Matrix
+
+```{r, include=TRUE, echo=FALSE, warning=FALSE, error=FALSE, cache=FALSE, message=FALSE, results='asis'}
+L <- xx("L =", L, digits=0) 
+L
+```
+
+### Upper Matrix
+
+```{r, include=TRUE, echo=FALSE, warning=FALSE, error=FALSE, cache=FALSE, message=FALSE, results='asis'}
+U <- xx("U =", U, digits=0) 
+U
+```

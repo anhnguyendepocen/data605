@@ -1,0 +1,475 @@
+---
+title: "Homework 4"
+author: "Duubar Villalobos Jimenez"
+date: "February 25, 2018"
+output:
+  prettydoc::html_pretty:
+    highlight: github
+    theme: leonids
+    toc: yes
+  pdf_document: default
+  html_document: default
+subtitle: CUNY MSDS DATA 605
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r library_setup, include=FALSE}
+library(install.load)
+install_load("pracma", "MASS", "mat2tex") 
+```
+
+
+# 1. Problem set 1
+
+In this problem, we’ll verify using R that SVD and Eigenvalues are related as worked out in the weekly module. Given a $3 \times 2$ matrix $A$
+
+$$A= \begin{bmatrix}1&2&3\\ -1&0&4\\ \end{bmatrix}$$
+write code in R to compute $X = AA^T$ and $Y = A^TA$. Then, compute the eigenvalues and eigenvectors of $X$ and $Y$ using the built-in commands in R.
+
+Then, compute the left-singular, singular values, and right-singular vectors of $A$ using the *svd* command. Examine the two sets of singular vectors and show that they are indeed eigenvectors of $X$ and $Y$. In addition, the two non-zero eigenvalues (the 3rd value will be very close to zero, if not zero) of both $X$ and $Y$ are the same and are squares of the non-zero singular values of $A$.
+
+Your code should compute all these vectors and scalars and store them in variables.
+Please add enough comments in your code to show me how to interpret your steps.
+
+## Answer
+
+### Let's define our matrix $A$.
+
+```{r }
+A <- matrix(data = c(1,2,3,
+                     -1,0,4), ncol=3, byrow=TRUE)
+```
+
+Function that creates an empty matrix by given rows and columns.
+
+```{r}
+Matrix_Build <- function(A_rows, A_cols){
+
+  # Create an empty matrix AT (A Transpose) matrix with the given dimension from our A matrix
+  AT <- matrix(,nrow = A_cols, ncol = A_rows)
+  return(AT)
+}
+```
+
+Function that fill the values in a transpose of a matrix $A^T$ by a given matrix $A$.
+
+```{r}
+Create_Transpose <- function(A){
+  # Need to find A dimensions
+  A_dim <- dim(A)
+  # Need to identify our dimensions from our given matrix in columns and rows
+  A_rows <- A_dim[1]
+  A_cols <- A_dim[2]
+  
+  # Build an Empty matrix AT (A Transpose) with given dimension from A matrix
+  AT <- Matrix_Build(A_rows, A_cols)
+
+  # Procedure to fill transposed values from A Matrix into AT (A Transpose) matrix
+  for (i in 1:A_rows ){
+         for (j in 1:A_cols){
+
+            AT[j,i] <- A[i,j] # Fill AT based on A values
+  
+            #print(AT)
+       }
+  }
+  return(AT)
+}
+```
+
+Procedure to calculate matrix multiplication in between any two given matrices.
+
+```{r}
+Matrix_multiplication <- function(A, B){ 
+
+  # Need to find A dimensions
+  A_dim <- dim(A)
+  # Need to identify our dimension matrix in columns and rows from Matrix A
+  A_rows <- A_dim[1]
+  A_cols <- A_dim[2]
+  
+  # Need to find B dimensions
+  B_dim <- dim(B)
+  # Need to identify our dimension matrix in columns and rows from Matrix B
+  B_rows <- B_dim[1]
+  B_cols <- B_dim[2]
+  
+  # Need to Build an Empty matrix X with given dimension from A matrix and B matrix; 
+  # that is (A_n_cols x A_n_rows) x (B_n_cols x B_n_rows) = A_n_rows x B_n_cols
+  X <- Matrix_Build(A_rows, B_cols)
+  
+  if (A_rows != B_cols) {
+    print('ERROR in matrix multiplication; 
+          number of columns in A matrix does not equal number of rows in B matrix')
+  }
+  else{
+    # Procedure that multiply any two given matrices
+    for (i in 1:A_rows ){
+      for (j in 1:B_cols){
+              
+          h_row <- A[i,]  # Storing horizontal vector
+          v_col <- B[,j]  # Storing vertical vector
+          
+          # Calculating values of vector multiplication
+          hv <- h_row * v_col
+          
+          # Calculating sum of multiplication
+          sum_hv <- sum(hv)
+          
+          # Assign Values into results matrix X
+          X[i,j] <- sum_hv
+          
+          # A one line will be as follows
+          # X[i,j] <- sum(A[i,] * B[,j]) # I have not included in order to make it more understandable in step by step
+          
+          #print(X)
+      }
+    }
+  }
+  return(X)
+  
+}
+```
+
+Completing multiplication of Matrices $X = AA^T$ and $Y = A^TA$ by employing the same function.
+
+```{r}
+AT <- Create_Transpose(A) # Generating A Transpose.
+X <- Matrix_multiplication(A, AT) # Process of Multiplicating A * AT
+Y <- Matrix_multiplication(AT, A) # Process of Multiplicating AT * A
+```
+
+$X = AA^T$
+
+```{r}
+print(X)
+```
+
+$Y = A^TA$
+
+```{r}
+print(Y)
+```
+
+Verifying results with R function.
+
+$X = AA^T$
+
+```{r}
+A %*% t(A) # X
+```
+
+$Y = A^TA$
+
+```{r}
+t(A) %*% A # Y
+```
+
+As you can see, I have obtained the sames results.
+
+### Eigenvectors & Eigenvalues
+
+Computing Eigenvalues and Eigenvectors of $X$ and $Y$.
+
+```{r}
+X_eigen <- eigen(X)
+Y_eigen <- eigen(Y)
+```
+
+Eigenvalues of $X$
+
+```{r}
+X_eigen$values
+```
+
+Eigenvectors of $X$
+
+```{r}
+X_eigen$vectors
+```
+
+Eigenvalues of $Y$
+
+```{r}
+round(Y_eigen$values,6) # I will round in order to avoid scientific notation
+```
+
+Eigenvectors of $Y$
+
+```{r}
+Y_eigen$vectors
+```
+
+### Singular Values
+
+
+https://stat.ethz.ch/R-manual/R-devel/library/base/html/svd.html
+
+
+```{r}
+SVD_Values <- svd(A)
+SVD_Values
+```
+
+By definition of eigenvectors, $x$ is an eigenvector of $A$ if $Ax = \lambda x$; in this case we want to know if $\$u$ is an eigenvector of $X$; that is: $Xu = \lambda u$
+
++ Verifying $\$u$ and $X$.
+
+Verifying for first vector column of $\$u$
+
+```{r}
+u <- SVD_Values$u[,1] # Taking $u since it seems to have the same values but with different sign as the eigenvector returned from X
+left_side_of_equal <- X %*% u  # Performing left side of equality
+ls <- left_side_of_equal[,1]  # Separating it as a vector in order to find scalar \lambda
+lambda <- ls / u
+```
+
+As you can see, both vectors have the same result, meaning that if we do $Xu - \lambda u = 0$ with $\lambda =$ `r round(lambda[1],6)`.
+
+```{r}
+round(X %*% u - lambda[1] * u, 13) # Rounding approximation to 13th decimal.
+```
+
+Verifying for second vector column of $\$u$
+
+```{r}
+u <- SVD_Values$u[,2] # Taking $u since it seems to have the same values but with different sign as the eigenvector returned from X
+left_side_of_equal <- X %*% u  # Performing left side of equality
+ls <- left_side_of_equal[,1]  # Separating it as a vector in order to find scalar \lambda
+lambda <- ls / u
+```
+
+As you can see, both vectors have the same result, meaning that if we do $Xu - \lambda u = 0$ with $\lambda =$ `r round(lambda[1],6)`.
+
+```{r}
+round(X %*% u - lambda[1] * u, 13) # Rounding approximation to 13th decimal.
+```
+
+By having both results, we van conclude that the vectors given by $\$u$ are eigenvectors of $X$.
+
+
+
++ Verifying $\$v$ and $Y$.
+
+Verifying for first vector column of $\$v$
+
+```{r}
+v <- SVD_Values$v[,1] # Taking $u since it seems to have the same values but with different sign as the eigenvector returned from Y
+left_side_of_equal <- Y %*% v  # Performing left side of equality
+ls <- left_side_of_equal[,1]  # Separating it as a vector in order to find scalar \lambda
+lambda <- ls / v
+```
+
+As you can see, both vectors have the same result, meaning that if we do $Yv - \lambda v = 0$ with $\lambda =$ `r round(lambda[1],6)`.
+
+```{r}
+round(Y %*% v - lambda[1] * v, 12) # Rounding approximation to 12th decimal.
+```
+
+Verifying for second vector column of $\$v$
+
+```{r}
+v <- SVD_Values$v[,2] # Taking $u since it seems to have the same values but with different sign as the eigenvector returned from Y
+left_side_of_equal <- Y %*% v  # Performing left side of equality
+ls <- left_side_of_equal[,1]  # Separating it as a vector in order to find scalar \lambda
+lambda <- ls / v
+```
+
+As you can see, both vectors have the same result, meaning that if we do $Yv - \lambda v = 0$ with $\lambda =$ `r round(lambda[1],6)`.
+
+```{r}
+round(Y %*% v - lambda[1] * v, 12) # Rounding approximation to 12th decimal.
+```
+
+By having both results, we van conclude that the vectors given by $\$v$ are eigenvectors of $Y$.
+
+
+Something very interesting to note is that it seems that the $\lambda$ values for both $Xu = \lambda u$ and $Yv = \lambda v$ are the same.
+
+And by performing the squares of the Singular Values, we confirmed that the eigenvalues are not only the same but squares of the singular values.
+
+```{r}
+SVD_Values$d
+SVD_Values$d * SVD_Values$d # Calculating square of Singular Values
+```
+
+# 2. Problem set 2
+
+
+Using the procedure outlined in section 1 of the weekly handout, write a function to compute the inverse of a well-conditioned full-rank square matrix using co-factors. In order to compute the co-factors, you may use built-in commands to compute the determinant. 
+
+Your function should have the following signature:
+
+**B = myinverse(A)**
+
+where $A$ is a matrix and $B$ is its inverse and $A \times B = I$. The off-diagonal elements of I should be close to zero, if not zero. Likewise, the diagonal elements should be close to 1, if not 1. Small numerical precision errors are acceptable but the function myinverse should
+be correct and must use co-factors and determinant of $A$ to compute the inverse. 
+
+## Answer
+
+Let's define two testing matrices as follows:
+
+```{r}
+A <- matrix(data = c(1,-2,-2,-3,
+                     3,-9,0,-9,
+                     -1,2,4,7,
+                     -3,-6,26,2), ncol=4, byrow=TRUE)
+
+A1 <- matrix(data = c(1,2,3,
+                     -1,0,0), ncol=3, byrow=TRUE)
+```
+
+From Week 2, I have written a function that returns the LU form of a Matrix; I will use that same function in order to obtain my determinant from the U matrix; then I will call it in order to fill the values for the inverse matrix.
+
+Unfortunatelly, I noticed that this aproach failed a couple of times by returning NaN values; had to use the given function from R instead.
+
+```{r}
+# Function that creates the Identity matrix in order to create our L matrix from it
+build_L <- function(A){
+  
+  L <- matrix(,nrow = dim(A)[1], ncol = dim(A)[1])
+  
+  for (i in 1:dim(A)[1]){
+       for (j in 1:dim(A)[1]){
+            L[i,j]<- 0 # Assign 0     
+       }
+      L[i,i]<- 1 # Assign 1 
+  }
+  return(L)
+}
+
+# Function that finds and return the LU matrices.
+find_LU <- function(U){
+  
+  L <- build_L(U) # Building L Matrix
+
+  # Procedure to find Upper and Lower Matrix
+  for (i in 1:dim(U)[1] ){
+       k <- i + 1
+       if (k <= dim(U)[1]) {
+         for (j in k:dim(U)[1]){
+
+            L[j,i] <- (U[j,i] / U[i,i]) 
+            U[j,] <- -1 * (U[j,i] / U[i,i]) * U[i,] + U[j,]
+  
+            #print(U)
+            #print(L)
+         }
+       }
+  }
+  LU <- list(U, L)
+  return(LU)
+}
+
+
+# Find determiant of Matrix based on U decomposition
+mydeterminant <- function(A){
+  
+  LU <- find_LU(A)
+  U <- matrix(unlist(LU[1]), ncol=dim(A)[1], nrow=dim(A)[1])
+  L <- matrix(unlist(LU[2]), ncol=dim(A)[1], nrow=dim(A)[1])
+  
+  u_deter <- c() # Creating an empty vector
+  
+  for (i in 1:dim(U)[1] ){
+    u_deter[i] = U[i,i] # Obtaining the values from the diagonal in order to calculate the determinant
+  }
+  
+  mydeter <- prod(u_deter) # Return the product of all values in the vector
+  
+  return(mydeter)
+}
+```
+
+
+
+```{r}
+myinverse <- function(A){ 
+
+  # Need to find A dimensions
+  A_dim <- dim(A)
+  # Need to identify our dimension matrix in columns and rows from Matrix A
+  A_rows <- A_dim[1]
+  A_cols <- A_dim[2]
+  
+  # Need to Build an Empty matrix Inv with given dimension from A matrix ; 
+  # that is (A_n_cols x A_n_rows)
+  Inv <- Matrix_Build(A_cols, A_rows)
+  
+  # Need to Build an Empty matrix  Temp with given dimension from A matrix ; 
+  # that is (A_n_cols-1 x A_n_rows-1) that will be employed in order to find the determinant
+  # by passing it and creating a smaller decomposition of the main matrix A.
+   Temp <- Matrix_Build(A_cols-1, A_rows-1)
+  
+  # Need to verify that Matrix is square
+  if (A_cols != A_rows) {
+    print('ERROR illegal entry; 
+          A matrix does not equal number of rows and columns')
+    return(Inv)
+  }  
+  else{
+    
+    # Procedure that find the Inverse of any given square matrix
+    for (i in 1:A_rows ){
+      for (j in 1:A_cols){
+         
+          Temp <- A[-i,-j] # Create reduced matrix by NOT including column and row
+          
+          k <- i + j  # This variable will return positive or negative signs
+          # for our co-factor values
+          
+          # Find determinant of reduced matrix
+          # Inv[j,i] <-  mydeterminant(Temp) # FAILED ATTEMPT! 
+          # Tried implementing my solution by employing LU decomposition
+          # but noticed that it returns some NaN values
+          
+          Inv[j,i] <- (-1)^k * det( Temp) # Using R function instead
+
+          # print(Inv)
+         
+      }
+    }
+  }
+  Inv <- 1 / (det(A))  * Inv
+  return(Inv)
+}
+
+```
+
+```{r}
+B <- myinverse(A)
+```
+
+This is how $B = A^{-1}$ looks like rounded to two digits.
+
+```{r, include=TRUE, echo=FALSE, warning=FALSE, error=FALSE, cache=FALSE, message=FALSE, results='asis'}
+B1 <- xx("A^{-1} =", B, mtype="bmatrix",digits=2) 
+B1
+```
+
+
++ Calculating $AB$ rounded to the 12th decimal value.
+
+```{r}
+AB <- round(A %*% B,12)
+```
+
+```{r, include=TRUE, echo=FALSE, warning=FALSE, error=FALSE, cache=FALSE, message=FALSE, results='asis'}
+AB <- xx("I =", AB, mtype="bmatrix",digits=0) 
+AB
+```
+
+
+
+
+
+
+
+
+
+
+
+

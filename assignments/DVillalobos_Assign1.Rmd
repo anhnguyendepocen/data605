@@ -1,0 +1,242 @@
+---
+title: "Homework 1"
+author: "Duubar Villalobos Jimenez"
+date: "January 30, 2018"
+output:
+  pdf_document: default
+  html_document: default
+  prettydoc::html_pretty:
+    highlight: github
+    theme: leonids
+    toc: yes
+subtitle: CUNY MSDS DATA 605
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+#install.packages("pracma")
+library(pracma)
+```
+
+# 1. Problem set 1
+
+
+## (1)
+**Calculate the dot product u.v where u = [0.5; 0.5] and v = [3; -4]**
+
+### Answer
+
++ Defining vectors
+
+```{r vector_definitions, echo=TRUE}
+u <- c(0.5, 0.5)
+v <- c(3, -4)
+```
+
++ Defining function
+
+```{r dot_funtion_definition, echo=TRUE}
+dot_product <- function(u,v){
+  product <- dot(u,v)
+  return(product)
+}
+```
+
++ Answer
+
+The dot product u.v = `r dot_product(u,v)`.
+
++ By hand
+
+```{r dot_funtion1_definition, echo=TRUE}
+d <- (0.5 * 3) + (0.5 * (-4))
+```
+
++ Answer
+
+The dot product u.v = `r d`.
+
+## (2)
+**What are the lengths of u and v? Please note that the mathematical notion of the length of a vector is not the same as a computer science definition.**
+
+### Answer
+
++ In Computer Science:
+
+```{r cs_len_vectors, echo=TRUE}
+cs_vect_len <- function(v){
+  len <- length(v)
+  return(len)
+} 
+```
+
+The length of $u$ is `r cs_vect_len(u)`.
+
+The length of $v$ is `r cs_vect_len(v)`.
+
++ In Mathematics
+
+```{r math_len_vectors, echo=TRUE}
+math_vect_len <- function(v){
+  cum_sum <- 0
+  for (value in v){
+    cum_sum <- cum_sum + value * value
+  }
+  mth_vect_len <- sqrt(cum_sum)
+  return(mth_vect_len)
+}
+
+# Google search
+goog_vect_len <- function(x) sqrt(sum(x^2))
+```
+
+The length of $u$ is `r math_vect_len(u)`.
+
+The length of $v$ is `r goog_vect_len(v)`.
+
+## (3)
+**What is the linear combination: $3u - 2v$?**
+
+### Answer
+
+```{r linear_comb, echo=TRUE}
+w <- 3*u - 2*v
+```
+
+The linear combination is the vector w = [`r w`].
+
+## (4) 
+**What is the angle between $u$ and $v$**
+
+### Answer
+
+Since the dot product of two vectors $x$ and $y$ is defined as follows:
+
+$$x . y = ||x|| . ||y|| cos(\theta)$$
+
+
+```{r angle, echo=TRUE}
+len_u <- goog_vect_len(u)
+len_v <- goog_vect_len(v)
+dot_uv <- dot_product(u,v)
+theta_angle_uv <- acos(dot_uv / (len_u * len_v))
+```
+
+The angle in between the vectors $u$ and $v$ is `r theta_angle_uv`.
+
+# 2. Problem set 2
+
+## Defining variables
+
+```{r SLE_01, echo=TRUE}
+x <- c('x1', 'x2', 'x3')
+```
+
+## Defining Matrix
+
+```{r SLE_02, echo=TRUE}
+A <- matrix(data = c( 1,  1, 3,
+                      2, -1, 5,
+                     -1, -2, 4)
+            , nrow=3, byrow = TRUE)
+```
+
+## Defining vector
+
+```{r SLE_03, echo=TRUE}
+b <- c(1, 2, 6)
+```
+
+## Writing Function
+
+```{r SLE_04, echo=TRUE}
+
+GJEP <- function(A, x, b){
+  
+  # Augmenting the matrix A
+  A <- cbind(A,b)
+  
+  # Renaming columns for matrix A
+  colnames(A) <- c("[,1]","[,2]","[,3]","[,4]")
+  
+  # Focus on Row 1
+  if ((A[1,1] == 0) && (A[2,1] != 0)) {
+    temp <- A[1,]
+    A[1,] <- A[2,]
+    A[2,] <- temp
+  }
+  
+  if (A[1,1] != 1) {
+    A[1,] <- A[1,] / A[1,1]
+  }
+
+  # Focus on Row 2 and 3
+  if (A[2,1] != 0) {
+    scalar = -1 * A[2,1]
+    A[2,] <- scalar *  A[1,] +  A[2,]
+  }
+  
+  if (A[3,1] != 0) {
+    scalar = -1 * A[3,1]
+    A[3,] <- scalar *  A[1,] +  A[3,]
+  }
+  
+  # Focus on Row 2
+  if ((A[2,2] == 0) && (A[3,2] != 0)) {
+    temp <- A[2,]
+    A[2,] <- A[3,]
+    A[3,] <- temp
+  }
+
+  if (A[2,2] != 1) {
+    A[2,] <- A[2,] / A[2,2]
+  }
+
+  # Focus on Row 3
+  if (A[3,2] != 0) {
+  scalar = -1 * A[3,2]
+  A[3,] <- scalar *  A[2,] +  A[3,]
+  }
+
+  
+  if (A[3,3] != 0)  {
+    if (A[3,3] != 1) {
+      A[3,] <- A[3,] / A[3,3]
+    }
+  }
+  
+  # Finding Solutions
+  x3 <- A[3,4]
+  x2 <- A[2,4] - A[2,3] * x3
+  x1 <- A[1,4] - A[1,3] * x3 - A[1,2] * x2
+  
+  xx <- c(x1, x2, x3)
+  
+  xx <- round(xx,2)
+  
+  return(xx)
+}
+
+```
+
+###  Solution
+
+```{r}
+sol <- GJEP(A,x,b)
+```
+
+The solution for the system will be S = {(`r x[1]` = `r sol[1]`, `r x[2]` = `r sol[2]`, `r x[3]` = `r sol[3]`)}
+
+
+
+
+
+
+
+
+
+
+
+
+

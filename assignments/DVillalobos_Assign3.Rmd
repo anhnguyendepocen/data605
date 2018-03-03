@@ -1,0 +1,224 @@
+---
+title: "Homework 3"
+author: "Duubar Villalobos Jimenez"
+date: "February 17, 2018"
+output:
+  pdf_document: default
+  prettydoc::html_pretty:
+    highlight: github
+    theme: leonids
+    toc: yes
+  html_document: default
+subtitle: CUNY MSDS DATA 605
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# https://github.com/friendly/matlib
+#library(devtools)
+#install_github("friendly/matlib", build_vignettes = TRUE)
+
+#install.packages("install.load")
+library(install.load)
+install_load("pracma", "mat2tex", "matrixcalc", "matlib") 
+```
+
+# 1. Problem set 1
+
+
+## (1)
+**What is the rank of the matrix A?**
+
+$$A= \begin{pmatrix}1&2&3&4\\ -1&0&1&3\\ 0&1&-2&1\\ 5&4&-2&-3\end{pmatrix}$$
+
+### Answer
+
+
+```{r }
+A <- matrix(data = c(1,2,3,4,
+                     -1,0,1,3,
+                     0,1,-2,1,
+                     5,4,-2,-3), ncol=4, byrow=TRUE)
+```
+
+Let's see the Echelon form with steps (thanks to *echelon* function from the *matlib* library).
+
+```{r}
+
+#https://github.com/friendly/matlib
+echelon(A, verbose = TRUE, fractions = TRUE)
+
+```
+
+
+Based on the definition of Rank of a Matrix: _Suppose that $A$ is an $m \times n$ matrix. Then the rank of $A$ is the dimension of the column space of $A, r (A) = dim (C(A))$._ 
+
+
+```{r}
+
+r <- matrix.rank(A)
+
+```
+
+Now, since we have four rows with values equal to 1 in different columns, then the rank will be r(A) = `r r`.
+
+
+
+## (2)
+
+**Given an $m \times n$ matrix where $m > n$, what can be the maximum rank? The minimum rank, assuming that the matrix is non-zero?**
+
+### Answer
+
+In order to respond to this, we can do as follows:
+
+Since we have $m > n$, we can easily say that $m$ could be equal to $m=n+1$ *OR* $m=n+2$, *OR* ... $m=n+k$.
+
+From the above, we can deduct that $k=m-n$. 
+
+For simplicity reasons, we can say that we can represent our matrix as follows:
+
+$$A_{m \times n} = A_{(n+k) \times n}$$
+**What can be the maximum rank?**
+
+Now, since we have more rows than columns the maximum number of columns that could be reduced in the Echelon form will be $n$ columns. Hense the maximum rank of the matrix will be $r(Matrix)=n$.
+
+**What can be the minimum rank?**
+
+I would say that the minimum rank of such matrix will be $1$, since that's the minimum number of inputs in any given row in order to have a non zero matrix.
+
+
+
+## (3)
+**What is the rank of matrix B?**
+
+$$B=\begin{pmatrix}1&2&1\\ 3&6&3\\ 2&4&2\end{pmatrix}$$
+
+### Answer
+
+```{r}
+B <- matrix(data = c(1,2,1,
+                     3,6,3,
+                     2,4,2), ncol=3, byrow=TRUE)
+```
+
+
+Let's see the Echelon form with steps (thanks to *echelon* function from the *matlib* library).
+
+```{r}
+echelon(B, verbose = TRUE, fractions = TRUE)
+```
+
+
+```{r}
+
+r <- matrix.rank(B)
+
+```
+
+Now, since we have one row with values equal to 1 in the first column, then the rank will be r(A) = `r r`.
+
+
+# 1. Problem set 2
+
+**Compute the eigenvalues and eigenvectors of the matrix $A$. You’ll need to show your work. You’ll need to write out the characteristic polynomial and show your solution.**
+
+$$A=\begin{pmatrix}1&2&3\\ 0&4&5\\ 0&0&6\end{pmatrix}$$
+
+## Answer
+
+Let's define our matrix A and I.
+
+```{r}
+A <- matrix(data = c(1,2,3,
+                     0,4,5,
+                     0,0,6), ncol=3, byrow=TRUE)
+
+I <- matrix(data = c(1,0,0,
+                     0,1,0,
+                     0,0,1), ncol=3, byrow=TRUE)
+```
+
+$$f_A (\lambda) =\det \left(\begin{pmatrix}1&2&3\\ \:0&4&5\\ \:0&0&6\end{pmatrix}-\lambda \begin{pmatrix}1&0&0\\ \:0&1&0\\ \:0&0&1\end{pmatrix}\right)$$
+
+$$f_A (\lambda) =\det \begin{pmatrix}1-\lambda&2&3\\ 0&4-\lambda&5\\ 0&0&6-\lambda\end{pmatrix}=\left(-\lambda+1\right)\left(-\lambda+4\right)\left(-\lambda+6\right)$$
+
+$$f_A (\lambda) = -\lambda^3+11\lambda^2-34\lambda+24$$
+
+From the above procedure, our characteristic polynomial will be:
+
+```{r}
+charpoly(A, info = FALSE)
+```
+
+$$f_A (\lambda) = \lambda^3-11\lambda^2+34\lambda-24$$
+
+When comparing the hand solution versus the charpoly solution, we notice that each value has same numerical results but with oposite signs. This should not be a problem once we solve for the equation $f_A (\lambda) = 0$
+
+
+From the above, we can conclude that our eigenvalues are as follows:
+
+$$\left(-\lambda+1\right)\left(-\lambda+4\right)\left(-\lambda+6\right)=0$$
+
+$\lambda_1=1$,  $\lambda_2=4$,   $\lambda_3=6$
+
+**R Solution**
+
+```{r}
+E <- eigen(A, symmetric=FALSE)
+E$values
+```
+
+And by solving each equation $(A-\lambda I_3)x=0$ we can obtain our eigenvectors.
+
+For $\lambda_1=1$
+
+$$\left(\begin{pmatrix}1&2&3\\ 0&4&5\\ 0&0&6\end{pmatrix}-(1)\cdot\begin{pmatrix}1&0&0\\ 0&1&0\\ 0&0&1\end{pmatrix}\right)\begin{pmatrix}x_1\\ x_2\\ x_3\end{pmatrix}=\begin{pmatrix}0\\ 0\\ 0\end{pmatrix}$$
+
+$$\begin{pmatrix}0&2&3\\ 0&3&5\\ 0&0&5\end{pmatrix}\begin{pmatrix}x_1\\ x_2\\ x_3\end{pmatrix}=\begin{pmatrix}0\\ 0\\ 0\end{pmatrix}$$
+
+$$=\begin{pmatrix}0x_1 + 2x_2+3x_3\\ 0x_1+3x_2+5x_3\\ 0x_1+0x_2+5x_3\end{pmatrix}=\begin{pmatrix}0\\ 0\\ 0\end{pmatrix}$$
+
+From the above equation, we can conclude that $x_1$ can take any value, but for simplicity reasons, we will assign $x_1=1$.
+
+For $\lambda_1=1$ the Eigenvector will be:
+
+$x_3 =0$, $x_2=0$, $x_1=1$
+
+$$E_f(\lambda=1)=\begin{pmatrix}1\\ 0\\ 0\end{pmatrix}$$
+
+
+Similar steps need to be performed for $\lambda_2=4$ and $\lambda_3=6$ in order to obtain our final result as follows:
+
+$\lambda_2=4$
+
+$$\left(\begin{pmatrix}1&2&3\\ 0&4&5\\ 0&0&6\end{pmatrix}-(4)\cdot\begin{pmatrix}1&0&0\\ 0&1&0\\ 0&0&1\end{pmatrix}\right)\begin{pmatrix}x_1\\ x_2\\ x_3\end{pmatrix}=\begin{pmatrix}0\\ 0\\ 0\end{pmatrix}$$
+
+$$E_f(\lambda=4)=\begin{pmatrix}2\\ 3\\ 0\end{pmatrix}$$
+
+$\lambda_2=6$
+
+$$\left(\begin{pmatrix}1&2&3\\ 0&4&5\\ 0&0&6\end{pmatrix}-(6)\cdot\begin{pmatrix}1&0&0\\ 0&1&0\\ 0&0&1\end{pmatrix}\right)\begin{pmatrix}x_1\\ x_2\\ x_3\end{pmatrix}=\begin{pmatrix}0\\ 0\\ 0\end{pmatrix}$$
+
+$$E_f(\lambda=6)=\begin{pmatrix}16\\ 25\\ 10\end{pmatrix}$$
+
+**R Solution**
+
+After comparing our solutions, I have noticed that the results differ a lot! I have done some research and found out that the Eigenvectors calculated in R uses the LAPACK routines (http://www.netlib.org/). 
+
+LAPACK is a library of Fortran 77 subroutines for solving the most commonly occurring problems in numerical linear algebra. It has been designed to be efficient on a wide range of modern high-performance computers. The name LAPACK is an acronym for Linear Algebra PACKage. 
+
+
+```{r}
+E$vectors
+```
+
+
+In this case R returns the following eigenvectors wich are efficient numerical approximations to our previous hand results.
+
+$E_f(\lambda=6)=$ [`r E$vectors[,1]`]
+
+$E_f(\lambda=4)=$ [`r E$vectors[,2]`]
+
+$E_f(\lambda=1)=$ [`r E$vectors[,3]`]
