@@ -1,0 +1,708 @@
+---
+title: "Homework 6"
+author: "Duubar Villalobos Jimenez"
+date: "March 11, 2018"
+output:
+  pdf_document: default
+  prettydoc::html_pretty:
+    highlight: github
+    theme: leonids
+    toc: yes
+  html_document: default
+subtitle: CUNY MSDS DATA 605
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+report_type <- 'latex'  # 'latex' for pdf   or 'html' for web
+```
+
+```{r library_setup, include=FALSE}
+library(install.load)
+install_load("xtable") 
+```
+
+```{r,echo=FALSE}
+#######################################################################################################################################
+##                                     PROBLEM 1                                                                                     ##
+#######################################################################################################################################
+```
+
+# Problem 1
+
+A box contains 54 red marbles, 9 white marbles, and 75 blue marbles. If a marble is randomly selected from the box, what is the probability that it is red or blue? Express your answer as a fraction or a decimal number rounded to four decimal places.
+
+## Solution
+
+Let's represent as follows:
+
+```{r, echo=FALSE}
+Description <- "Marbles in a Box"
+R <- 54 # Red Marbles
+W <- 9  # White Marbles
+B <- 75 # Blue Marbles
+Total <- R + W + B # Total of Marbles in the Box
+```
+
+```{r, echo=FALSE}
+box <- data.frame(Description, R, W, B, Total)
+```
+
+```{r, echo=FALSE, warning=FALSE, results='asis'}
+print(xtable(box, caption='Table.', digits=0),hline.after=c(0,1), include.rownames=FALSE, type=report_type, comment=FALSE, floating = getOption("xtable.floating", FALSE))
+```
+
+Defining function that find the probability of a color based on total quantity!
+
+```{r}
+P <- function(C, Total){
+  p <- C / Total
+  return(p)
+}
+```
+
+```{r, echo=FALSE}
+Description <- "Probabilities of being selected"
+pR <- P(R, Total) # Red Marbles
+pW <- P(W, Total) # White Marbles
+pB <- P(B, Total) # Blue Marbles
+pTotal <- pR + pW + pB # Total of Marbles in the Box
+pbox <- data.frame(Description, R = pR, W = pW, B = pB, Total = pTotal)
+```
+
+```{r, echo=FALSE, warning=FALSE, results='asis'}
+print(xtable(pbox, caption='Table.', digits=4),hline.after=c(0,1), include.rownames=FALSE, type=report_type, comment=FALSE, floating = getOption("xtable.floating", FALSE))
+```
+
+```{r, echo=FALSE}
+p <- P(R, Total) + P(B, Total)
+```
+
+Since the marble is randomly selected from the box and we want to know the probability of red or blue, we have as follows:
+
+$$P(R \cup B) = P(R) + P(B)$$
+$P(R \cup B)$ = `r round(P(R, Total),4)` + `r round(P(B, Total),4)`
+
+$P(R \cup B)$ = `r round(p,4)`
+
+**Answer:** The probability that the marble is red or blue is `r round(p,4)` or `r round(p,4)*100`%.
+
+```{r,echo=FALSE}
+#######################################################################################################################################
+##                                     PROBLEM 2                                                                                     ##
+#######################################################################################################################################
+```
+# Problem 2
+
+You are going to play mini golf. A ball machine that contains 19 green golf balls, 20 red golf balls, 24 blue golf balls, and 17 yellow golf balls, randomly gives you your ball. What is the probability that you end up with a red golf ball? Express your answer as a simplified fraction or a decimal rounded to four decimal places.
+
+## Solution
+
+Let's represent as follows:
+
+```{r, echo=FALSE}
+Description <- "Golf balls in the Machine"
+G <- 19 # Green color golf balls
+R <- 20 # Red color golf balls
+B <- 24 # Blue color golf balls
+Y <- 17 # Yellow color golf balls
+Total <- G + R + B + Y # Total of golf balls in the machine
+```
+
+```{r, echo=FALSE}
+box <- data.frame(Description, G, R, B, Y, Total)
+```
+
+```{r, echo=FALSE, warning=FALSE, results='asis'}
+print(xtable(box, caption='Table.', digits=0),hline.after=c(0,1), include.rownames=FALSE, type=report_type, comment=FALSE, floating = getOption("xtable.floating", FALSE))
+```
+
+Defining function that find the probability of a color based on total quantity!
+
+```{r}
+P <- function(C, Total){
+  p <- C / Total
+  return(p)
+}
+```
+
+```{r, echo=FALSE}
+Description <- "Probabilities of being selected"
+pG <- P(G, Total) # Green golf balls
+pR <- P(R, Total) # Red golf balls
+pB <- P(B, Total) # Blue golf balls
+pY <- P(Y, Total) # Yellow golf balls
+pTotal <- pG + pR + pB + pY # Total of Marbles in the Box
+pbox <- data.frame(Description, G = pG, R = pR, B = pB, Y = pY, Total = pTotal)
+```
+
+```{r, echo=FALSE, warning=FALSE, results='asis'}
+print(xtable(pbox, caption='Table.', digits=4),hline.after=c(0,1), include.rownames=FALSE, type=report_type, comment=FALSE, floating = getOption("xtable.floating", FALSE))
+```
+
+```{r, echo=FALSE}
+p <- P(R, Total)
+```
+
+Since the marble is randomly selected from the machine and we want to know the probability of red, we have as follows:
+
+$$P(R) = \frac{\#\:Red\:golf\:balls}{Total\:number\:of\:golf\:balls\:in\:the\:machine}$$
+
+$P(R)$ = `r round(p,4)`
+
+**Answer:** The probability that the golf ball is a red is `r round(p,4)` or `r round(p,4)*100`%.
+
+```{r,echo=FALSE}
+#######################################################################################################################################
+##                                     PROBLEM 3                                                                                     ##
+#######################################################################################################################################
+```
+
+# Problem 3
+
+A pizza delivery company classifies its customers by gender and location of residence. The research department has gathered data from a random sample of 1399 customers. The data is summarized in the table below.
+
+```{r, echo=FALSE}
+Residence <- c('Apartment', 'Dorm', 'With Parents(s)', 'Sorority/Fraternity House', 'Other')
+Males <- c(81,116,215,130,129)
+Females <- c(228,79,252,97,72)
+tResidence <- data.frame(Residence, Males, Females)
+```
+```{r, echo=FALSE, warning=FALSE, results='asis'}
+print(xtable(tResidence, caption='Table.', digits=0),hline.after=c(0,5), include.rownames=FALSE, type=report_type, comment=FALSE, floating = getOption("xtable.floating", FALSE))
+```
+
+What is the probability that a customer is not male or does not live with parents? Write your answer as a fraction or a decimal number rounded to four decimal places.
+
+## Solution
+
+Let's calculate our totals as follows:
+
+```{r, echo=FALSE}
+Residence <- c('Apartment', 'Dorm', 'With Parents(s)', 'Sorority/Fraternity House', 'Other', 'Total')
+Males <- c(81,116,215,130,129, 0)
+Females <- c(228,79,252,97,72, 0)
+tResidence <- data.frame(Residence, Males, Females)
+tResidence$Males[6] <- sum(as.numeric(tResidence$Males))
+tResidence$Females[6] <- sum(as.numeric(tResidence$Females))
+tResidence$Total <- tResidence$Males + tResidence$Females
+```
+
+```{r, echo=FALSE, warning=FALSE, results='asis'}
+print(xtable(tResidence, caption='Table.', digits=0),hline.after=c(0,5), include.rownames=FALSE, type=report_type, comment=FALSE, floating = getOption("xtable.floating", FALSE))
+```
+
+Since we are being asked the probability that a customer is not male or does not live with parents, we have as follows:
+
+$P(Not\:Male) = 1 - P(Male)$
+
+$P(Not\:living\:with\:parents)$ = 1 - $P(living \: with \: parents)$
+
+$P(Not\:Male \: \cup \: Not \: living \: With \: Parents) = (1 - P(Male)) + (1 - P(living\:with\:parents)) - (1 - P(Not \: Male \: \cap \: Not \: living\:With\:Parents$ 
+
+```{r, echo=FALSE}
+tMales <- tResidence$Males[6]
+tWithParents <- tResidence$Total[3]
+tMWithParents <- tResidence$Males[3]
+
+Total <- tResidence$Total[6]
+
+
+pMales <- tMales / Total
+pWithParents <- tWithParents / Total
+pMWithParents <- tMWithParents / Total
+
+
+
+p <- (1 - pMales) + (1 - pWithParents) - (1-252/728) # Complement of females living with parents that is the interection
+
+#p1 <- pMales + pWithParents - pMWithParents
+
+```
+
+**Answer:** The probability that a customer is not male or does not live with parents is `r round(p,4)` or `r round(p,4)*100`%.
+
+```{r,echo=FALSE}
+#######################################################################################################################################
+##                                     PROBLEM 4                                                                                     ##
+#######################################################################################################################################
+```
+
+# Problem 4
+
+Determine if the following events are independent.
+
+## Solution
+
+**1. Going to the gym.**
+
+Answer: **Independent**
+
+
+
+**2. Losing weight.**
+
+Answer: **Dependent**
+
+```{r,echo=FALSE}
+#######################################################################################################################################
+##                                     PROBLEM 5                                                                                     ##
+#######################################################################################################################################
+```
+
+# Problem 5
+
+A veggie wrap at City Subs is composed of 3 different vegetables and 3 different condiments wrapped up in a tortilla. If there are 8 vegetables, 7 condiments, and 3 types of tortilla available, how many different veggie wraps can be made?
+
+## Solution
+
+```{r, echo=FALSE}
+nvegetables <- 8
+kvegetables <- 3
+vegetables <- choose(nvegetables, kvegetables)
+
+ncondiments <- 7
+kcondiments <- 3
+condiments <- choose(ncondiments, kcondiments)
+
+ntortillas <- 3
+ktortillas <- 1
+tortillas <- choose(ntortillas, ktortillas)
+
+Wraps <- vegetables * condiments * tortillas
+```
+
+We can choose `r vegetables` different combinations for our vegetables.
+
+We can choose `r condiments` different combinations for our condiments.
+
+We can choose `r tortillas` different combinations for our tortillas.
+
+**Answer:** The wrap can be made in `r Wraps` different ways.
+
+```{r,echo=FALSE}
+#######################################################################################################################################
+##                                     PROBLEM 6                                                                                     ##
+#######################################################################################################################################
+```
+
+# Problem 6
+
+Determine if the following events are independent.
+
+## Solution
+
+**Jeff runs out of gas on the way to work. **
+
+Answer: **Dependent**
+
+
+**Liz watches the evening news.**
+
+Answer: **Independent**
+
+
+```{r,echo=FALSE}
+#######################################################################################################################################
+##                                     PROBLEM 7                                                                                     ##
+#######################################################################################################################################
+```
+
+# Problem 7
+
+The newly elected president needs to decide the remaining 8 spots available in the cabinet he/she is appointing. If there are 14 eligible candidates for these positions (where rank matters), how many different ways can the members of the cabinet be appointed?
+
+## Solution
+
+```{r, echo=FALSE}
+ncandidates <- 14
+kcandidates <- 8
+candidates <- factorial(ncandidates)/factorial(ncandidates - kcandidates)
+```
+
+Table of positions:
+
+```{r, echo=FALSE}
+C1 <- 14
+C2 <- 13
+C3 <- 12
+C4 <- 11
+C5 <- 10
+C6 <- 9
+C7 <- 8
+C8 <- 7
+Total <- C1 * C2 * C3 * C4  * C5 * C6 * C7 * C8
+cabinetTable <- data.frame(C1,C2,C3,C4,C5,C6,C7,C8,Total)
+```
+
+
+```{r, echo=FALSE, warning=FALSE, results='asis'}
+print(xtable(cabinetTable, caption='Table.', digits=0),hline.after=c(0,1), include.rownames=FALSE, type=report_type, comment=FALSE, floating = getOption("xtable.floating", FALSE))
+```
+
+**Answer:** The members of the cabinet can be appointed in `r format(candidates, scientific=F)` different ways; but since rank matters the number of ways will be `r choose(ncandidates, kcandidates)` different ways.
+
+
+```{r,echo=FALSE}
+#######################################################################################################################################
+##                                     PROBLEM 8                                                                                     ##
+#######################################################################################################################################
+```
+
+# Problem 8
+
+A bag contains 9 red, 4 orange, and 9 green jellybeans. What is the probability of reaching into the bag and randomly withdrawing 4 jellybeans such that the number of red ones is 0, the number of orange ones is 1, and the number of green ones is 3? Write your answer as a fraction or a decimal number rounded to four decimal places.
+
+## Solution
+
+Let's represent as follows:
+
+```{r, echo=FALSE}
+Description <- "Jellybeans"
+R <- 9 # Red color jellybeans
+O <- 4 # Orange color jellybeans
+G <- 9 # Green color jellybeans
+Total <- R + O + G # Total of jellybeans in bag
+```
+
+```{r, echo=FALSE}
+box <- data.frame(Description, R, O, G, Total)
+```
+
+```{r, echo=FALSE, warning=FALSE, results='asis'}
+print(xtable(box, caption='Table.', digits=0),hline.after=c(0,1), include.rownames=FALSE, type=report_type, comment=FALSE, floating = getOption("xtable.floating", FALSE))
+```
+
+Defining function that find the probability of a color based on total quantity!
+
+```{r,echo=FALSE}
+P <- function(C, Total){
+  p <- C / Total
+  return(p)
+}
+```
+
+```{r, echo=FALSE}
+Description <- "Probabilities of being selected"
+pR <- P(R, Total) # Red Marbles
+pO <- P(O, Total) # White Marbles
+pG <- P(G, Total) # Blue Marbles
+pTotal <- pR + pO + pG # Total of Marbles in the Box
+pbox <- data.frame(Description, R = pR, O = pO, G = pG, Total = pTotal)
+```
+
+```{r, echo=FALSE, warning=FALSE, results='asis'}
+print(xtable(pbox, caption='Table.', digits=4),hline.after=c(0,1), include.rownames=FALSE, type=report_type, comment=FALSE, floating = getOption("xtable.floating", FALSE))
+```
+
+```{r, echo=FALSE}
+Description <- c("Available to Choose from", "Choose","Number of ways for selecting a jelly bean")
+pChooseR <- c(R, 0,choose(R, 0))
+pChooseO <- c(O, 1,choose(O, 1))
+pChooseG <- c(G, 3,choose(G, 3))
+pChoose <- data.frame(Description, `Red_9C0` = pChooseR, `Orange_4C1` = pChooseO, `Green_9C3` = pChooseG)
+```
+
+```{r, echo=FALSE, warning=FALSE, results='asis'}
+print(xtable(pChoose, caption='Table.', digits=0),hline.after=c(0,3), include.rownames=FALSE, type=report_type, comment=FALSE, floating = getOption("xtable.floating", FALSE))
+```
+
+Since we have to withdraw 4 jelly beans, the resulting probability of the output will be as follows:
+
+Individual probability:
+
+$p = P(O) \times P(G) \times P(G) \times P(G)$
+
+Combined probability:
+
+```{r}
+#p <- pO * pG * pG * pG # Individual probabilities
+p <- ( choose(R, 0) * choose(O, 1) * choose(G, 3) ) / choose(R + O + G, 4) # Combined probabilities
+```
+
+**Answer:** The probability of reaching into the bag and randomly withdrawing 4 jellybeans such that the number of red ones is 0, the number of orange ones is 1, and the number of green ones is 3 is `r round(p,4)` or `r round(p,4)*100`%. 
+
+```{r,echo=FALSE}
+#######################################################################################################################################
+##                                     PROBLEM 9                                                                                     ##
+#######################################################################################################################################
+```
+
+# Problem 9
+
+Evaluate the following expression.
+$$\frac{11!}{7!}$$
+
+## Solution
+
+$$\frac{11!}{7!}= \frac{11 \times 10 \times 9 \times 8 \times 7 \times 6 \times 5 \times 4 \times 3 \times 2 \times 1}{7 \times 6 \times 5 \times 4 \times 3 \times 2 \times 1}$$
+
+$$\frac{11!}{7!}= 11 \times 10 \times 9 \times 8$$
+```{r, echo=FALSE}
+fac <- 11*10*9*8
+#factorial(11)/factorial(7)
+```
+
+**Answer:** $\frac{11!}{7!}$ = `r format(fac, scientific=F)`
+
+
+```{r,echo=FALSE}
+#######################################################################################################################################
+##                                     PROBLEM 10                                                                                     ##
+#######################################################################################################################################
+```
+
+# Problem 10
+
+Describe the complement of the given event.
+
+$67\%$ of subscribers to a fitness magazine are over the age of $34$.
+
+## Solution
+
+$p(Age > 34) = 0.67$
+
+$p(Age \le 34) = 1 - p(Age > 34)$
+
+$p(Age \le 34)  = 1 -  0.67$
+
+$p(Age \le 34)  = 0.33$
+
+**Answer:** $33\%$ of subscribers to a fitness magazine are under or equal the age of $34$.
+
+
+
+```{r,echo=FALSE}
+#######################################################################################################################################
+##                                     PROBLEM 11                                                                                     ##
+#######################################################################################################################################
+```
+
+# Problem 11
+
+If you throw exactly three heads in four tosses of a coin you win \$97. If not, you pay me \$30. 
+
+**Step 1.** Find the expected value of the proposition. Round your answer to two decimal places. 
+
+**Step 2.** If you played this game 559 times how much would you expect to win or lose? (Losses must be entered as negative.)
+
+## Solution
+
+**1. Find the expected value of the proposition. Round your answer to two decimal places. **
+
+By assuming that it is a fair coin and by applying Bernoulli, we have as follows:
+
+```{r}
+n <- 4 # Number of trials
+j <- 3 # Number of success times
+p <- 1/2   # Probability of winning on every trial is the same
+q <- 1 - p   # Probability of failure on every trial is the same
+dollar_win <- 97 # Dollar amount if wining
+dollar_loose <- -30  # Dollar amount if loosing
+```
+
+Bernoulli formula.
+
+```{r}
+bernoulli <- function(n,p,j){
+  b <- choose(n,j) * p ^ (j) * (1 - p) ^ (n - j)
+  return(b)
+}
+```
+
+```{r}
+b <- bernoulli(n,p,j)
+# dbinom(j,n,p) # Binomial distribution function from R.
+```
+
+The probability of getting exactly three heads is `r b`.
+
+Now, in order to calculate our dollar values, we can do as follows:
+
+**Winning**
+
+$E(Win) = bernoulli(n,p,j) \times dollar\_win$
+
+$E(Win) = 0.25 \times 97$
+
+$E(Win)$ = `r bernoulli(n,p,j) * dollar_win`
+
+**Loosing**
+
+$E(Loose) = (1 - bernoulli(n,p,j)) \times dollar\_loose$
+
+$E(Loose) = 0.75 \times -30$
+
+$E(Loose)$ = `r (1 - bernoulli(n,p,j) ) * dollar_loose`
+
+**Answer:** Based on the above results and the given dollar values, the expected amount to be made is higher than the amount to be paid out.
+
+**2. If you played this game 559 times how much would you expect to win or lose? (Losses must be entered as negative.)**
+
+$E(Pay) = E(Win) + E(Loose)$
+
+```{r}
+ntimes <- 559 
+EWin <- bernoulli(n,p,j) * dollar_win * ntimes
+ELoose <- (1 - bernoulli(n,p,j)) * dollar_loose * ntimes
+Expected_Pay <- EWin + ELoose
+```
+
+**Answer:** After 559 times I would expect to win \$`r format(EWin, scientific=F)`; loose \$`r format(ELoose, scientific=F)` and end up with a profit of \$`r Expected_Pay`.
+
+
+```{r,echo=FALSE}
+#######################################################################################################################################
+##                                     PROBLEM 12                                                                                     ##
+#######################################################################################################################################
+```
+
+# Problem 12
+
+Flip a coin 9 times. If you get 4 tails or less, I will pay you \$23. Otherwise you pay me \$26. 
+
+**Step 1.** Find the expected value of the proposition. Round your answer to two decimal places. 
+
+**Step 2.** If you played this game 994 times how much would you expect to win or lose? (Losses must be entered as negative.)
+
+## Solution
+
+**1. Find the expected value of the proposition. Round your answer to two decimal places. **
+
+By assuming that it is a fair coin and by applying Bernoulli, we have as follows:
+
+```{r}
+n <- 9 # Number of trials
+j <- 4 # Number of success times must be equal to or less than 4
+p <- 1/2   # Probability of winning on every trial is the same
+q <- 1 - p   # Probability of failure on every trial is the same
+dollar_win <- 23 # Dollar amount if wining
+dollar_loose <- -26  # Dollar amount if loosing
+```
+
+Bernoulli formula.
+
+```{r}
+bernoulli <- function(n,p,j){
+  b <- choose(n,j) * p ^ (j) * (1 - p) ^ (n - j)
+  return(b)
+}
+```
+
+```{r}
+b0 <- bernoulli(n,p,0) # Probability of 0
+b1 <- bernoulli(n,p,1) # Probability of 1
+b2 <- bernoulli(n,p,2) # Probability of 2
+b3 <- bernoulli(n,p,3) # Probability of 3
+b4 <- bernoulli(n,p,4) # Probability of 4
+b <- b0 + b1 + b2 + b3 + b4
+#pbinom(j,n,p) # Binomial distribution function from R.
+```
+
+The probability of getting exactly three heads is `r round(b,4)`.
+
+Now, in order to calculate our dollar values, we can do as follows:
+
+**Winning**
+
+$$E(Win) = dollar\_win \times \sum{bernoulli(n,p,j_i)}$$
+
+$$E(Win) = 23 \times 0.5 $$
+
+$E(Win)$ = `r dollar_win * b`
+
+**Loosing**
+
+$$E(Loose) = dollar\_loose \times (1 - \sum{bernoulli(n,p,j_i)}) $$
+
+$$E(Loose) = -26 \times 0.5 $$
+
+$E(Loose)$ = `r dollar_loose * (1 - b)`
+
+
+**Answer:** Based on the above results and the given dollar values, the expected amount to be made is lower than the amount to be paid out.
+
+**If you played this game 994 times how much would you expect to win or lose? (Losses must be entered as negative.)**
+
+$E(Pay) = E(Win) + E(Loose)$
+
+```{r}
+ntimes <- 994 
+EWin <- b * dollar_win * ntimes
+ELoose <- (1 - b) * dollar_loose * ntimes
+Expected_Pay <- EWin + ELoose
+```
+
+**Answer:** After 994 times I would expect to win \$`r format(EWin, scientific=F)`; loose \$`r format(ELoose, scientific=F)` and end up with a profit of \$`r Expected_Pay`.
+
+
+```{r,echo=FALSE}
+#######################################################################################################################################
+##                                     PROBLEM 13                                                                                     ##
+#######################################################################################################################################
+```
+
+# Problem 13
+
+The sensitivity and specificity of the polygraph has been a subject of study and debate for years. A 2001 study of the use of polygraph for screening purposes suggested that the probability of detecting a liar was $.59$ (sensitivity) and that the probability of detecting a "truth teller" was $.90$ (specificity). We estimate that about $20\%$ of individuals selected for the screening polygraph will lie.
+
+```{r}
+p_liar <- 0.59 # Probability of detecting a liar
+n_liar <- 1 - p_liar # Probability of NOT detecting a lie
+p_truth <- 0.90 # Probability of detecting a truth
+n_truth <- 1 - p_truth # Probability of NOT detecting the truth
+liars <- 0.2 # Probability estimation of individuals will lie
+truth <- 1 - liars #Probability estimation of individuals will tell the truth
+```
+
+## Solution
+
+**a. What is the probability that an individual is actually a liar given that the polygraph detected him/her as such? (Show me the table or the formulaic solution or both.)** 
+
+```{r, echo=FALSE}
+options <- c("Positive liar", "Negative liar", "Total")
+liars_table <- data.frame(options)
+liars_table$`Tell Lies` <- c(p_liar * liars, n_liar * liars , p_liar * liars + n_liar * liars)
+liars_table$`Tell Truth` <- c(n_truth * truth,  p_truth * truth , p_truth * truth + n_truth * truth)
+liars_table$Total <- liars_table$`Tell Lies` + liars_table$`Tell Truth`
+```
+
+```{r, echo=FALSE, warning=FALSE, results='asis'}
+print(xtable(liars_table, caption='Table.', digits=4),hline.after=c(0,2), include.rownames=FALSE, type=report_type, comment=FALSE, floating = getOption("xtable.floating", FALSE))
+```
+
+```{r}
+pLiarGivenLiar <- liars_table$`Tell Lies`[1] / liars_table$Total[1]
+```
+
+**Answer:** The probability that an individual is actually a liar given that the polygraph detected him/her as such is `r round(pLiarGivenLiar,4)` or `r round(pLiarGivenLiar,4)*100`%.
+
+**b. What is the probability that an individual is actually a truth-teller given that the polygraph detected him/her as such? (Show me the table or the formulaic solution or both.)**
+
+
+```{r, echo=FALSE, warning=FALSE, results='asis'}
+print(xtable(liars_table, caption='Table.', digits=4),hline.after=c(0,2), include.rownames=FALSE, type=report_type, comment=FALSE, floating = getOption("xtable.floating", FALSE))
+```
+
+```{r}
+pTruthGivenTruth <- liars_table$`Tell Truth`[2] / liars_table$Total[2]
+```
+
+**Answer:** The probability that an individual is actually a truth-teller given that the polygraph detected him/her as such is `r round(pTruthGivenTruth,4)` or `r round(pTruthGivenTruth,4)*100`%.
+
+
+**c. What is the probability that a randomly selected individual is either a liar or was identified as a liar by the polygraph? Be sure to write the probability statement.**
+
+
+```{r, echo=FALSE, warning=FALSE, results='asis'}
+print(xtable(liars_table, caption='Table.', digits=4),hline.after=c(0,2), include.rownames=FALSE, type=report_type, comment=FALSE, floating = getOption("xtable.floating", FALSE))
+```
+
+```{r,}
+pliar <- liars_table$`Tell Lies`[3] +  liars_table$Total[1] - liars_table$`Tell Lies`[1]
+```
+
+**Answer:** The probability that a randomly selected individual is either a liar or was identified as a liar by the polygraph is `r round(pliar,4)` or `r round(pliar,4)*100`%.
+
+
+END.
