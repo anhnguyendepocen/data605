@@ -1,0 +1,131 @@
+---
+title: "Discussion 9"
+author: "Duubar Villalobos Jimenez   mydvtech@gmail.com"
+date: "March 28, 2018"
+output:
+  pdf_document: default
+  prettydoc::html_pretty:
+    highlight: github
+    theme: leonids
+    toc: yes
+    prettydoc:code_folding: hide
+  html_document: default
+subtitle: CUNY MSDS DATA 605
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+options(warn=-1)
+```
+
+
+```{r library_setup, echo=FALSE, results='hide', warning=FALSE, message=FALSE}
+library(xtable)
+library(plyr)
+type='html'
+```
+
+
+# 1 † Page 338
+
+**Book:** Grinstead: Introduction to Probability
+
+## Exercise
+
+Let $S_{100}$ be the number of heads that turn up in 100 tosses of a fair coin. Use the Central Limit Theorem to estimate the below exercises:
+
+
+### Preamble
+
+The second fundamental theorem of probability is the **Central Limit Theorem**. This theorem says that if $S_n$ is the sum of n mutually independent random variables, then the distribution function of $S_n$ is well-approximated by a certain type of continuous function known as a **normal density function**, which is given by the formula
+
+$$f_{\mu, \sigma}(x) = \frac{e^{-\frac{(x - \mu)^2}{2 \sigma^2}}}{\sigma \sqrt{2 \pi }} $$
+Also, from the above information provided, we know as follows:
+
+$n = 100$
+
+$p = 0.5$
+
+$\mu = np$
+
+$\mu = 100 \times 0.5 = 50$
+
+$\sigma^2 = np(1-p)$
+
+$\sigma^2 = 100 \times 0.5 \times (1 - 0.5)$
+
+$\sigma = \sqrt{100 \times 0.5 \times (1 - 0.5)}$
+
+$\sigma = 5$
+
+Also, The Central Limit for Bernoulli Trials says as follows:
+
+Let $S_n$ be the number of successes in $n$ Bernoulli trials with probability $p$ for success, and let $a$ and $b$ be two fixed real numbers. Then
+
+$$lim_{n \to \infty} P \left( a \le S_n \le b \right) = \int_a^b{f_{\mu, \sigma}(x)dx}$$
+
+For demonstration purposes, I will write a small function that find it's approximation based on the Central Limit Theorem using the **normal density function** only.
+
+
+```{r, echo=TRUE}
+# This can also be calculated by using >>>>>   pnorm(b, mu, sigma)   <<<<<
+CLT <- function(a, b){
+  mu <- 50
+  sigma <- 5
+  ndf <- function(x){exp(1)^(-(x - 50)^2 / (2 * 5^2)) / (5 * sqrt(2 * pi))}
+  p_ndf <- integrate(ndf, lower = a, upper = b)
+  return(p_ndf$value)
+}
+```
+
+
+```{r, echo=FALSE}
+plot.density <- function(a,b){
+  mean <- 50 # mu
+  sd <- 5    # sigma
+  x<-seq(0,100,0.01)
+  y<-dnorm(x,mean,sd) 
+  plot(x,y,type="l") 
+  polygon(c( x[x<=b], b ),  c(y[x<=b],0 ), col="red")
+  polygon(c( x[x<=a], a ),  c(y[x<=a],0 ), col="white")
+  title("Normal Density Function")
+}
+```
+
+### (a) P ($S_{100} \le 45$).
+
+```{r, echo=FALSE}
+plot.density(0,45)
+```
+
+The probability will be `r round(CLT(0,45),4)` or `r round(CLT(0,45) * 100,2)`%.
+
+
+### (b) P ($45 < S_{100} < 55$).
+
+```{r, echo=FALSE}
+plot.density(45,55)
+```
+
+The probability will be `r round(CLT(45,55),4)` or `r round(CLT(45,55) * 100,2)`%.
+
+
+### (c) P ($S_{100} > 63$).
+
+
+```{r, echo=FALSE}
+plot.density(63,100)
+```
+
+The probability will be `r round(CLT(63,100),4)` or `r round(CLT(63,100) * 100,2)`%.
+
+
+
+### (d) P ($S_{100} < 57$).
+
+
+```{r, echo=FALSE}
+plot.density(0,57)
+```
+
+The probability will be `r round(CLT(0,57),4)` or `r round(CLT(0,57) * 100,2)`%.

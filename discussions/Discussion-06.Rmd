@@ -1,0 +1,153 @@
+---
+title: "Discussion 6"
+author: "Duubar Villalobos Jimenez"
+date: "March 7, 2018"
+output:
+  prettydoc::html_pretty:
+    highlight: github
+    theme: leonids
+    toc: yes
+    prettydoc:code_folding: hide
+  pdf_document: default
+  html_document: default
+subtitle: CUNY MSDS DATA 605
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+options(warn=-1)
+```
+
+# Libraries
+
+In this section, I will include all libraries needed.
+
+```{r libraries,}
+libraries <- c(
+              "plotly",
+              "tidyverse",
+              "xtable"
+              )
+```
+
+```{r library_setup, include=FALSE}
+library(install.load)
+install_load(libraries)
+```
+
+# 9 † Page 89
+
+**Book:** Grinstead: Introduction to Probability
+
+## Exercise
+
+A more refined inequality for approximating $n!$ is given by
+
+$$\sqrt{2\pi n} \left( \frac{n}{e} \right)^n e^{1/(12n+1)} < n! < \sqrt{2\pi n} \left( \frac{n}{e} \right)^n e^{1/(12n)}$$
+Write a computer program to illustrate this inequality for n = 1 to 9.
+
+## Solution
+
++ Left Side
+
+```{r}
+factorial_left <- function(n){
+  n_row <- c()
+  fact_l <- c()
+  fact_l[1] <- 1
+  e <- exp(1)
+  for (i in 1:n){
+    n_row[i] <- i
+    fact_l[i] <- round(sqrt(2 * pi * i) * (i / e)^(i) * e^( 1 / (12 * i + 1) ),2)
+  }
+  fact_l <- data.frame('n' = n_row, 'n_left' =fact_l)
+  return(fact_l)
+}
+
+```
+
++ Factorial
+
+```{r}
+factorial_center <- function(n){
+  n_row <- c()
+  fact_c <- c()
+  nfac <- 1
+  e <- exp(1)
+  for (i in 1:n){
+    nfac <- nfac * i
+    n_row[i] <- i
+    fact_c[i] <- nfac
+  }
+  fact_c <- data.frame('n' = n_row, 'n_center' =fact_c)
+  return(fact_c)
+}
+
+```
+
++ Right Side
+
+```{r}
+factorial_right <- function(n){
+  n_row <- c()
+  fact_r <- c()
+  fact_r[1] <- 1
+  e <- exp(1)
+  for (i in 1:n){
+    n_row[i] <- i
+    fact_r[i] <- round(sqrt(2 * pi * i) * (i / e)^(i) * e^( 1 / (12 * i ) ),2)
+  }
+  fact_r <- data.frame('n' = n_row, 'n_right' =fact_r)
+  return(fact_r)
+}
+
+```
+
+
+## Table
+
+Even though is not very clear in the plot, by looking at the results, we can notice that yes, in fact these approximations illustrate the inequality!
+
+
+```{r, echo=FALSE}
+n <- 9
+fl <- factorial_left(n)
+fc <- factorial_center(n)
+fr <- factorial_right(n)
+compare_factorial <- data.frame(fl$n, fl$n_left, fc$n_center, fr$n_right)
+names(compare_factorial)[1] <- "n"
+names(compare_factorial)[2] <- "left side"
+names(compare_factorial)[3] <- "n!"
+names(compare_factorial)[4] <- "right side"
+```
+
+
+
+```{r, echo=FALSE, warning=FALSE, results='asis'}
+print(xtable(compare_factorial, caption='n! Comparison Table.', digits=2),hline.after=c(0,9), include.rownames=FALSE, type='html', comment=FALSE, floating = getOption("xtable.floating", FALSE))
+```
+
+## Plot
+
+```{r, echo=FALSE}
+p <- plot_ly(compare_factorial, x = ~`n`, y = ~`right side`, type = 'scatter', mode = 'lines+markers', name = 'Top') %>%
+             add_trace(y = ~`n!`, mode = 'lines+markers', name =  "n!") %>%
+             add_trace(y = ~`left side`, mode = 'lines+markers', name =  "Bottom") %>%
+             layout(title = 'n! Comparison', #" Single Mortality Rates by State and Year",
+                    xaxis = list(categoryorder = "array",
+                                 categoryarray = ~`n`,
+                                 type = "category"),
+                    yaxis = list(title = "n!"))
+```
+
+
+
+```{r, echo=FALSE}
+p
+```
+
+
+
+
+
+

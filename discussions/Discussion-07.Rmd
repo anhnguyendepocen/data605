@@ -1,0 +1,197 @@
+---
+title: "Discussion 7"
+author: "Duubar Villalobos Jimenez   mydvtech@gmail.com"
+date: "March 14, 2018"
+output:
+  prettydoc::html_pretty:
+    highlight: github
+    theme: leonids
+    toc: yes
+    prettydoc:code_folding: hide
+  pdf_document: default
+  html_document: default
+subtitle: CUNY MSDS DATA 605
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+options(warn=-1)
+```
+
+
+```{r library_setup, echo=FALSE, results='hide', warning=FALSE, message=FALSE}
+#install.packages('rsconnect') # To publish Shiny App.
+library(shiny)
+library(shinythemes)
+#  localhost:5586 # To allow downloads must be typing in Browser search bar
+```
+
+
+# 15 † Page 199
+
+**Book:** Grinstead: Introduction to Probability
+
+## Exercise
+
+Write a program for the user to input **n, p, j** and have the program print out the exact value of **b(n, p, k)** and the **Poisson** approximation to this value.
+
+### Solution
+
+**Poisson Distribution**
+
+The Poisson distribution arises in many situations. It is safe to say that it is one of the three most important discrete probability distributions (the other two being the uniform and the binomial distributions). The Poisson distribution can be viewed as arising from the binomial distribution or from the exponential density. We shall now explain its connection with the former; its connection with the latter will be explained in the next section.
+
+The Poisson distribution is used to describe the distribution of rare events in a large population.
+
+Here is a small shinny app to play with it and it's results.
+
+
+```{r functions, echo=FALSE}
+# Benoulli Function
+bernoulli <- function(n,p,j){
+  b <- choose(n,j) * p ^ (j) * (1 - p) ^ (n - j)
+  return(b)
+}
+#pbinom(j,n,p) # Binomial distribution function from R
+
+
+# Poisson Function
+Poisson <- function(n,l){
+  e <- exp(1)
+  p <- l ^ n * e ^ (-l) / factorial(n)
+  return(p)
+}
+
+```
+
+
+## Shiny
+
+
+```{r shiny_ui, echo=FALSE}
+# User interface select disease and year
+
+ui <- fluidPage(
+  
+ # App title ----
+ titlePanel("Binomial vs Poisson Approximation"),
+  
+ # Header title ---- 
+ headerPanel('Sliders'),
+
+  # Sidebar layout with input and output definitions ----
+  sidebarLayout(
+
+    # Sidebar to demonstrate various slider options ----
+    sidebarPanel(
+
+      # Input: Simple integer interval ----
+      sliderInput("n", "n",
+                  min = 0, max = 1000,
+                  value = 1000, step = 1),
+
+      # Input: Decimal interval with step value ----
+      sliderInput("p", "p",
+                  min = 0, max = 1,
+                  value = 0.01, step = 0.001),
+
+      # Input: Specification of range within an interval ----
+      sliderInput("j", "j",
+                  min = 0, max = 25,
+                  value = 0, step = 1)
+
+    ),
+
+    # Main panel for displaying outputs ----
+    mainPanel(
+
+      # Output: Table summarizing the values entered ----
+      tableOutput("values"),
+      
+      # Output: Table displaying results from the values entered ----
+      tableOutput("binomial_vs_poison")
+    )
+  )
+)
+```
+
+
+```{r shiny-server, echo=FALSE}
+# Define server logic for slider examples ----
+server <- function(input, output) {
+
+  # Reactive expression to create data frame of all input values ----
+  sliderValues <- reactive({
+
+    data.frame(
+      Variable = c("n",
+               "p",
+               "j",
+               "lambda"),
+      Value = as.character(c(input$n,
+                             input$p,
+                             input$j,
+                              input$n * input$p)),
+      stringsAsFactors = FALSE)
+
+  })
+  
+    # Reactive expression to create data frame of all input values ----
+  binomial_vs_binomial_Values <- reactive({
+    
+    b <- bernoulli(input$n, input$p, input$j)  # Bernoulli Distribution
+    d <- dbinom(input$j,input$n,input$p)       # Binomial Distribution
+    p <- dpois(input$j, lambda=input$n * input$p) # Poisson Distribution
+    dif <- d-p
+    
+    
+    data.frame(
+      Distribution = c("Bernoulli - 'Manual'",
+               "Binomial",
+               "Poisson",
+               "Difference"),
+      Value = as.character(c(format(round(b,4), scientific=F),
+                             format(round(d,4), scientific=F),
+                             format(round(p,4), scientific=F),
+                             format(round(dif,4), scientific=F))),
+      stringsAsFactors = FALSE)
+
+  })
+  
+  
+
+  # Show the values in an HTML table ----
+  output$values <- renderTable({
+    sliderValues()
+  })
+  
+  
+  # Show the Comparison values in an HTML table ----
+  output$binomial_vs_poison <- renderTable({
+    binomial_vs_binomial_Values()
+  })
+  
+
+}
+```
+
+
+
+```{r run-shiny, echo=FALSE, warning=FALSE, error=FALSE, cache=FALSE, message=FALSE, fig.height=4.2}
+# Run the Shiny application 
+shinyApp(ui = ui, server = server, options = list(height = 600) )
+```
+
+## Poisson distribution table.
+
+**Are you able to verify the results?**
+
+
+
+
+
+Let me know what you think.
+
+
+

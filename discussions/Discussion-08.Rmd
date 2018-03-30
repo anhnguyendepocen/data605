@@ -1,0 +1,191 @@
+---
+title: "Discussion 8"
+author: "Duubar Villalobos Jimenez   mydvtech@gmail.com"
+date: "March 21, 2018"
+output:
+  prettydoc::html_pretty:
+    highlight: github
+    theme: leonids
+    toc: yes
+    prettydoc:code_folding: hide
+  pdf_document: default
+  html_document: default
+subtitle: CUNY MSDS DATA 605
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+options(warn=-1)
+```
+
+
+```{r library_setup, echo=FALSE, results='hide', warning=FALSE, message=FALSE}
+library(xtable)
+library(plyr)
+type='html'
+```
+
+
+# 5 † Page 289
+
+**Book:** Grinstead: Introduction to Probability
+
+## Exercise
+
+Consider the following two experiments: the first has outcome X taking on the values 0, 1, and 2 with equal probabilities; the second results in an (in-dependent) outcome Y taking on the value 3 with probability 1/4 and 4 with probability 3/4. Find the distribution of:
+
+### Solution
+
+```{r, echo=FALSE}
+X <- c( 0,   1,   2  )
+px <- c(1/3, 1/3, 1/3)
+x_table <- data.frame('Outcome' = X, 'Probability' = as.character(px))
+```
+
+```{r, echo=FALSE, results='asis'}
+print(xtable(x_table, caption='Probability Table for Outcome X.', digits=0),hline.after=c(0,3), include.rownames=FALSE, type=type, comment=FALSE)
+```
+
+
+
+```{r, echo=FALSE}
+Y <- c( 3, 4)
+py <- c(1/4, 3/4)
+y_table <- data.frame('Outcome' = Y, 'Probability' = as.character(py))
+```
+
+```{r, echo=FALSE, results='asis'}
+print(xtable(y_table, caption='Probability Table for Outcome Y.', digits=0),hline.after=c(0,2), include.rownames=FALSE, type=type, comment=FALSE)
+```
+
+
+### a) Y + X.
+
+
+```{r, echo=FALSE}
+i <- 1
+Sn <- c()
+Sk <- c()
+SnP <- c()
+SnPk <- c()
+for ( x in X){
+  for ( y in Y){
+    Sk[i] <- paste0(as.character(y), ' + ', as.character(x))
+    Sn[i] <- y + x
+    i <- i + 1
+  }
+}
+i <- 1
+for ( x in px){
+  for ( y in py){
+    SnPk[i] <- paste0(as.character(y), ' x ', as.character(x))
+    SnP[i] <- y * x
+    i <- i + 1
+  }
+}
+
+S_table <- data.frame('Operation'=Sk, 'Result' = as.character(Sn), 'Convoluted' = SnPk, 'Probability' =  SnP)
+```
+
+```{r, echo=FALSE, results='asis'}
+print(xtable(S_table, caption='Probability Table of individual Outcomes Sn = Y + X.', digits=4),hline.after=c(0,6), include.rownames=FALSE, type=type, comment=FALSE)
+```
+
+```{r,echo=FALSE}
+SnU <- unique(Sn)
+```
+
+From the above table, we can deduct that our possible outcomes for Sn are as follows: Sn = {`r SnU`}.
+
+From here we can deduct our probabilities as follows:
+
+```{r, echo=FALSE}
+i <- 1
+p <- c()
+for (n in Sn){
+  p[i] <- sum(S_table$Probability[S_table$Result == n])
+  i <- i + 1
+}
+
+S_table <- data.frame('Sn' = as.character(Sn), 'Probability' = p, 'Percentage' = paste(round(p*100,2),'%'))
+
+S_table <- S_table[!duplicated(S_table), ] # dropping duplicate rows
+```
+
+```{r, echo=FALSE, results='asis'}
+print(xtable(S_table, caption='Probability Table for Unique Outcomes Sn = Y + X.', digits=4),hline.after=c(0,4), include.rownames=FALSE, type=type, comment=FALSE)
+```
+
+
+### b) Y - X.
+
+
+
+```{r, echo=FALSE}
+i <- 1
+Sn <- c()
+Sk <- c()
+SnP <- c()
+SnPk <- c()
+for ( x in X){
+  for ( y in Y){
+    Sk[i] <- paste0(as.character(y), ' - ', as.character(x))
+    Sn[i] <- y - x
+    i <- i + 1
+  }
+}
+i <- 1
+for ( x in px){
+  for ( y in py){
+    SnPk[i] <- paste0(as.character(y), ' x ', as.character(x))
+    SnP[i] <- y * x
+    i <- i + 1
+  }
+}
+
+S_table <- data.frame('Operation'=Sk, 'Result' = as.character(Sn), 'Convoluted' = SnPk, 'Probability' =  SnP)
+```
+
+```{r, echo=FALSE, results='asis'}
+print(xtable(S_table, caption='Probability Table of individual Outcomes Sn = Y - X.', digits=4),hline.after=c(0,6), include.rownames=FALSE, type=type, comment=FALSE)
+```
+
+```{r,echo=FALSE}
+SnU <- sort(unique(Sn))
+```
+
+From the above table, we can deduct that our possible outcomes for Sn are as follows: Sn = {`r SnU`}.
+
+From here we can deduct our probabilities as follows:
+
+```{r, echo=FALSE}
+i <- 1
+p <- c()
+for (n in Sn){
+  p[i] <- sum(S_table$Probability[S_table$Result == n])
+  i <- i + 1
+}
+
+S_table <- data.frame('Sn' = as.character(Sn), 'Probability' = p, 'Percentage' = paste(round(p*100,2),'%'))
+
+S_table <- S_table[!duplicated(S_table), ] # dropping duplicate rows
+
+S_table <- arrange(S_table,Sn)
+```
+
+```{r, echo=FALSE, results='asis'}
+print(xtable(S_table, caption='Probability Table for Unique Outcomes Sn = Y - X.', digits=4),hline.after=c(0,4), include.rownames=FALSE, type=type, comment=FALSE)
+```
+
+
+
+
+
+
+
+
+
+Let me know what you think.
+
+
+
