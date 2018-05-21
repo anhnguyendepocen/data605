@@ -1,0 +1,1995 @@
+---
+title: "Final Project"
+author: "Duubar Villalobos Jimenez   mydvtech@gmail.com"
+date: "May 20, 2018"
+output:
+  prettydoc::html_pretty:
+    highlight: github
+    theme: leonids
+    toc: yes
+    prettydoc:code_folding: hide
+  pdf_document: default
+  html_document: default
+subtitle: CUNY MSDS DATA 605
+---
+
+
+```{r setup, warning=FALSE, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(xtable)
+library(plyr)
+library(Hmisc)
+library(corrplot)
+library(PerformanceAnalytics)
+library(ggpubr)
+library(matrixcalc)
+library(MASS)
+
+#install.packages('matrixcalc')
+#install.packages('ggpubr')
+report_type <- 'html'  # 'latex' for pdf   or 'html' for web
+```
+
+
+
+# House Prices: Advanced Regression Techniques.
+
+Predict sales prices and practice feature engineering, RFs, and gradient boosting.
+
+## Read data
+
+```{r, echo=FALSE}
+# Setting up my Working directory
+wd <- setwd("~/Dropbox/CUNY/Courses/DATA605/Final-Project")
+```
+
+
+```{r read_csv, }
+url <- paste( wd, '/data/', sep="")
+train <- read.csv(paste(url, 'train.csv', sep = ''), header=TRUE, sep=",", stringsAsFactors=FALSE)
+test <- read.csv(paste(url, 'test.csv', sep = ''), header=TRUE, sep=",", stringsAsFactors=FALSE)
+```
+
+## Picking quantitative independent variable
+
+**Instruction:** Pick one of the quantitative independent variables from the training data set (train.csv), and define that variable as $X$. Make sure this variable is skewed to the right!
+
+For this, I would like to answer the following question:
+
+Is ___________, on average, higher or lower in home prices with high rates of value?
+
+If we suspect ____________ might affect home prices, then ____________ is the independent (explanatory) variable and SalePrice is the dependent (response) variable in the relationship.
+
+```{r, }
+# Structure of the training dataset
+str(train)
+```
+
+```{r, echo=FALSE}
+par(mfrow=c(3,3))
+hist(train$LotFrontage, xlab="LotFrontage", main="LotFrontage Frequencies")
+hist(train$LotArea, xlab="LotArea", main="LotArea Frequencies") 
+hist(train$YearBuilt, xlab="YearBuilt", main="YearBuilt Frequencies")
+hist(train$YearRemodAdd, xlab="YearRemodAdd", main="YearRemodAdd Frequencies")
+hist(train$MasVnrArea, xlab="MasVnrArea", main="MasVnrArea Frequencies")
+hist(train$BsmtFinSF1, xlab="BsmtFinSF1", main="BsmtFinSF1 Frequencies")
+hist(train$TotalBsmtSF, xlab="TotalBsmtSF", main="TotalBsmtSF Frequencies")
+hist(train$EnclosedPorch, xlab="EnclosedPorch", main="EnclosedPorch Frequencies")
+hist(train$PoolArea, xlab="PoolArea", main="PoolArea Frequencies")
+```
+
+I will pick **TotalBsmtSF** as $X$.
+
+```{r, }
+X <- train$TotalBsmtSF
+```
+
+**Instruction:** Pick the dependent variable and define it as $Y$.  
+
+My dependent variable will be **SalePrice** as $Y$.
+
+```{r, }
+Y <- train$SalePrice
+```
+
+## Probability
+
+Calculate as a minimum the below probabilities $a$ through $c$. Assume the small letter "x" is estimated as the 1st quartile of the X variable, and the small letter "y" is estimated as the 1st quartile of the Y variable. Interpret the meaning of all probabilities. In addition, make a table of counts as shown below.
+
+```{r, echo=FALSE}
+par(mfrow=c(2,2))
+hist(train$TotalBsmtSF, xlab="TotalBsmtSF", main="TotalBsmtSF Frequencies")
+boxplot(X)
+hist(train$SalePrice, xlab="SalePrice", main="SalePrice Frequencies")
+boxplot(Y)
+```
+
+```{r}
+#X[is.na(X)] <- 0 # No need, complete data readings
+x <- quantile(X, c(.25)) 
+
+#Y[is.na(Y)] <- 0 # No need, complete data readings
+y <- quantile(Y, c(.25)) 
+```
+
+### a. $P(X>x \: | \: Y>y)$
+
+Let's evaluate the probability that X > `r x[[1]]` **given** Y > `r format(round(y[[1]],2), scientific=FALSE)`.
+
+```{r}
+p <- mean(Y[X > x] > y)
+```
+
+**Answer:** The probability of  $P(X>x \: | \: Y>y)$ = `r format(round(p,4), scientific=FALSE)` or `r format(round(100*p,2), scientific=FALSE)`\%.
+
+That is, `r format(round(100*p,2), scientific=FALSE)` \% of the houses will have a price over \$`r format(y, scientific=FALSE)` when the total square feet of basement area is over `r x`.
+
+### b. $P(X>x \: , \: Y>y)$
+
+Let's evaluate the probability that X > `r x[[1]]` **and** Y > `r format(round(y[[1]],2), scientific=FALSE)`.
+
+```{r}
+px <- mean(X > x)
+py <- mean(Y > y)
+p <- px * py
+```
+
+**Answer:** The probability of  $P(X>x \: , \: Y>y)$ = `r format(round(p,4), scientific=FALSE)` or `r format(round(100*p,2), scientific=FALSE)`\%.
+
+That is, there's a `r format(round(100*p,2), scientific=FALSE)` \% probability of finding a house with a price over \$`r format(y, scientific=FALSE)` and a total square feet of basement area is over `r x`.
+
+### c. $P(X<x \: | \: Y>y)$
+
+Let's evaluate the probability that X < `r x[[1]]` **given** Y > `r format(round(y[[1]],2), scientific=FALSE)`.
+
+```{r}
+p <- mean(Y[X < x] > y)
+```
+
+**Answer:** The probability of  $P(X<x \: | \: Y>y)$ = `r format(round(p,4), scientific=FALSE)` or `r format(round(100*p,2), scientific=FALSE)`\%.
+
+That is, `r format(round(100*p,2), scientific=FALSE)` \% of the houses will have a price over \$`r format(y, scientific=FALSE)` when the total square feet of basement area is less than `r x`.
+
+**Table of Counts:**
+
+```{r, echo=FALSE}
+xa <- quantile(X) 
+ya <- quantile(Y) 
+
+xy_table <- data.frame(row.names=c('<=3d quartile', '>3d quartile', 'Total'))
+
+# <=2d quartile Column
+xy_table$`<=2d quartile`[1] <- sum(Y[X <= xa[4]] <= ya[3])
+xy_table$`<=2d quartile`[2] <- sum(Y[X > xa[4]] <= ya[3])
+xy_table$`<=2d quartile`[3] <- xy_table$`<=2d quartile`[1] + xy_table$`<=2d quartile`[2] 
+
+# >2d quartile Column
+xy_table$`>2d quartile`[1] <- sum(Y[X <= xa[4]] > ya[3])
+xy_table$`>2d quartile`[2] <- sum(Y[X > xa[4]] > ya[3])
+xy_table$`>2d quartile`[3] <- xy_table$`>2d quartile`[1] + xy_table$`>2d quartile`[2] 
+
+# Total Column
+xy_table$Total = xy_table$`<=2d quartile` + xy_table$`>2d quartile`
+
+```
+
+
+```{r, echo=FALSE, results='asis'}
+print(xtable(xy_table, caption='Quartile Counts', digits=0),
+      hline.after=c(0,2), include.rownames=TRUE, type=report_type, comment=FALSE)
+```
+
+**Question:** Does splitting the training data in this fashion make them independent?
+
+**Answer:** By splitting the data in this fashion, it does not make the variables independent, but it offer a little bit more freedom in terms of working out with this data for insights purposes.
+
+### Defining A & B from quartiles
+
+Let A be the new variable counting those observations above the 1st quartile for X.
+
+```{r, }
+A <- sum(X > x)
+```
+
+Let B be the new variable counting those observations above the 1st quartile for Y.
+
+```{r, }
+B <- sum(Y > y)
+```
+
+### Does $P(AB)=P(A)P(B)$?
+
+Check mathematically, and then evaluate by running a Chi Square test for association.
+
+In this case, A and B are not considered independent since B has influence from A due to the origin of our data.
+
+```{r}
+p <- (A / 1460) * (B / 1460)
+```
+
+In this case the probability won't be considered to be P(AB) =  `r p`.
+
+### Chi Square test for association.
+
+```{r, echo=FALSE}
+AB_data <- data.frame(A,B, row.names = c('Counts'))
+```
+
+
+```{r, echo=FALSE, results='asis'}
+print(xtable(AB_data, caption='A and B Counts', digits=0),
+      hline.after=c(0,1), include.rownames=TRUE, type=report_type, comment=FALSE)
+```
+
+The hypotheses can be described as the following:
+
+**$H_0$** : The counts for each column are the same.
+
+**$H_A$** : The counts for each column are not the same.
+
+There are two conditions that must be checked before performing a chi-square test:
+
+**Independence.** Each case that contributes a count to the table must be independent of all the other cases in the table. (This condition is not necessarily met since B comes from SalePrice and it's believed to be affected by TotalBsmtSF).
+
+**Sample size / distribution.** Each particular scenario (i.e. cell count) must have at least 5 expected cases.
+
+Failing to check conditions may affect the test’s error rates.
+
+```{r, echo=FALSE}
+AB <- data.frame(A,B, row.names = c('Counts'))
+chisq.test(AB)
+```
+
+
+In this case, the p-value for this test statistic is found by looking at the upper tail of this chisquare distribution. We consider the upper tail because larger values of 2 would provide greater evidence against the null hypothesis.
+
+Due to the p value being so large, we reject the null hypothesis and accept the alternate hypothesis.
+
+# Descriptive Statistics
+
+Below is a description for our selected data sets X and Y.
+
+```{r, warning=FALSE}
+summary(X)
+```
+
+```{r, echo=FALSE}
+hist(X, xlab="TotalBsmtSF", main="TotalBsmtSF Frequencies")
+boxplot(X)
+```
+
+
+```{r, warning=FALSE}
+summary(Y)
+```
+
+
+```{r, echo=FALSE}
+hist(Y, xlab="SalePrice", main="SalePrice Frequencies")
+boxplot(Y)
+```
+
+```{r, echo=FALSE}
+plot(X,Y, xlab='TotalBsmtSF', ylab='SalePrice', main='TotalBsmtSF vs SalePrice')
+```
+
+
+### Correlation matrix
+
+Derive a correlation matrix for any THREE quantitative variables in the data set.
+
+My picks will be: `TotalBsmtSF`, `GrLivArea` and `SalePrice`.
+
+```{r}
+myvars <- c("TotalBsmtSF", "GrLivArea", "SalePrice")
+my_matrix <- train[myvars]
+
+cor_res <- cor(my_matrix)
+round(cor_res, 2)
+```
+
+
+
+
+
+```{r, warning =FALSE, echo=FALSE}
+corrplot(cor_res, type = "upper", order = "hclust", tl.col = "black", tl.srt = 45)
+```
+
+Positive correlations are displayed in blue and negative correlations in red color. Color intensity and the size of the circle are proportional to the correlation coefficients. In the right side of the correlogram, the legend color shows the correlation coefficients and the corresponding colors. 
+
+```{r, echo=FALSE}
+chart.Correlation(my_matrix, histogram=TRUE, pch=19)
+```
+
+
+
+In the above plot:
+
+    The distribution of each variable is shown on the diagonal.
+    On the bottom of the diagonal : the bivariate scatter plots with a fitted line are displayed
+    On the top of the diagonal : the value of the correlation plus the significance level as stars
+    Each significance level is associated to a symbol : p-values(0, 0.001, 0.01, 0.05, 0.1, 1) <=> symbols(“***”, “**”, “*”, “.”, " “)
+
+Visualization of `TotalBsmtSF` vs `SalePrice`.
+
+```{r, echo=FALSE}
+ggscatter(my_matrix, x = "TotalBsmtSF", y = "SalePrice", 
+          add = "reg.line", conf.int = TRUE, 
+          cor.coef = TRUE, cor.method = "pearson",
+          xlab = "TotalBsmtSF", ylab = "SalePrice")
+```
+
+Q-Q plots (quantile-quantile plots) for `TotalBsmtSF`.
+
+```{r, echo=FALSE}
+ggqqplot(my_matrix$TotalBsmtSF, ylab = "TotalBsmtSF")
+```
+
+Visualization of `GrLivArea` vs `SalePrice`.
+
+```{r, echo=FALSE}
+ggscatter(my_matrix, x = "GrLivArea", y = "SalePrice", 
+          add = "reg.line", conf.int = TRUE, 
+          cor.coef = TRUE, cor.method = "pearson",
+          xlab = "GrLivArea", ylab = "SalePrice")
+```
+
+Q-Q plots (quantile-quantile plots) for `GrLivArea`.
+
+```{r, echo=FALSE}
+ggqqplot(my_matrix$GrLivArea, ylab = "GrLivArea")
+```
+
+Visualization of `GrLivArea` vs `TotalBsmtSF`.
+
+
+```{r, echo=FALSE}
+ggscatter(my_matrix, x = "GrLivArea", y = "TotalBsmtSF", 
+          add = "reg.line", conf.int = TRUE, 
+          cor.coef = TRUE, cor.method = "pearson",
+          xlab = "GrLivArea", ylab = "TotalBsmtSF")
+```
+
+
+Q-Q plots (quantile-quantile plots) for `SalePrice`.
+
+```{r, echo=FALSE}
+ggqqplot(my_matrix$SalePrice, ylab = "SalePrice")
+```
+
+### Testing hypotheses on correlations
+
+Testing: `TotalBsmtSF` vs `GrLivArea` with 92% confidence interval.
+
+```{r}
+res <- cor.test(my_matrix$TotalBsmtSF, my_matrix$GrLivArea, conf.level = 0.92, method = "pearson")
+res
+```
+
+
+In the result above :
+
+    t is the t-test statistic value (t = 19.503),
+    df is the degrees of freedom (df= 1458),
+    p-value is the significance level of the t-test (p-value = 2.2^{-16}).
+    conf.int is the confidence interval of the correlation coefficient at 92% (conf.int = [0.4177447, 0.4904754]);
+    sample estimates is the correlation coefficient (Cor.coeff = 0.45).
+
+
+Testing: `TotalBsmtSF` vs `SalePrice` with 92% confidence interval.
+
+```{r}
+res <- cor.test(my_matrix$TotalBsmtSF, my_matrix$SalePrice, conf.level = 0.92, method = "pearson")
+res
+```
+
+
+In the result above :
+
+    t is the t-test statistic value (t = 29.671),
+    df is the degrees of freedom (df= 1458),
+    p-value is the significance level of the t-test (p-value = 2.2^{-16}).
+    conf.int is the confidence interval of the correlation coefficient at 92% (conf.int = [0.5841762, 0.6413763]);
+    sample estimates is the correlation coefficient (Cor.coeff = 0.61).
+
+
+Testing: `GrLivArea` vs `SalePrice` with 92% confidence interval.
+
+```{r}
+res <- cor.test(my_matrix$GrLivArea, my_matrix$SalePrice, conf.level = 0.92, method = "pearson")
+res
+```
+
+
+In the result above :
+
+    t is the t-test statistic value (t = 38.348),
+    df is the degrees of freedom (df= 1458),
+    p-value is the significance level of the t-test (p-value = 2.2^{-16}).
+    conf.int is the confidence interval of the correlation coefficient at 92% (conf.int = [0.6850407, 0.7307245]);
+    sample estimates is the correlation coefficient (Cor.coeff = 0.71).
+
+
+In all three cases, our null hypothesis got discarded in favor of the alternate hypothesis.
+
+**Would you be worried about familywise error? Why or why not?**
+
+This relates to the Type I or Type II Errors.
+
+In the above examples, I would not be too worry about family errors, and the reason is due to the nature of the data we can live with the possible uncertainty of False positives; in this case the extremely low p-value and the moderate "high" values of the correlation in between the variables offset the being worry part of it.
+
+# Linear Algebra and Correlation
+
+## Invert the Correlation matrix
+
+**Instruction:** Invert your 3 x 3 correlation matrix from above. (This is known as the precision matrix and contains variance inflation factors on the diagonal.) Multiply the correlation matrix by the precision matrix, and then multiply the precision matrix by the correlation matrix. Conduct LU decomposition on the matrix.
+
+The original correlation matrix is as follows:
+
+```{r, echo=FALSE}
+round(cor_res,2)
+```
+
+**solve(A)** 	Inverse of A where A is a square matrix. 
+
+```{r, echo= FALSE}
+precision_matrix  = solve(cor_res)
+round(precision_matrix,2)
+```
+
+Please note that the variance inflation factors (previously rounded to two decimals) are:
+
+```{r}
+diag(precision_matrix)
+```
+
+Multiply the correlation matrix by the precision matrix, and then multiply the precision matrix by the correlation matrix. 
+
+
+```{r, echo=FALSE}
+round(cor_res %*%  precision_matrix,0)
+```
+
+
+```{r}
+round(precision_matrix  %*% cor_res, 0)
+```
+
+We can quickly verify that this is the inverse by applying $A \cdot A^{-1} = I$ this returns the identity matrix.
+
+
+## LU decomposition
+
+Conduct LU decomposition on the matrix.
+
+```{r, }
+LU_decomp <- lu.decomposition(precision_matrix)
+```
+
+### L Matrix
+
+```{r, echo=FALSE}
+round(LU_decomp$L,6)
+```
+
+
+### U Matrix
+
+```{r, echo=FALSE}
+round(LU_decomp$U,6)
+```
+
+
+# Calculus-Based Probability & Statistics
+
+Many times, it makes sense to fit a closed form distribution to data. For the first variable that you selected which is skewed to the right, shift it so that the minimum value is above zero as necessary. Then load the MASS package and run fitdistr to fit an exponential probability density function. (See https://stat.ethz.ch/R-manual/R-devel/library/MASS/html/fitdistr.html ).
+
+## Finding $\lambda$
+
+```{r, }
+# Adding 1 in order to bring the values above zero for the minimum values.
+X <- X + 1
+
+lamda <- fitdistr(X, 'exponential')
+```
+
+The optimal value $\lambda$ will be: `r format(lamda$estimate, scientific=FALSE)`.
+
+## 1000 Samples
+
+Take 1000 samples using this $\lambda$.
+
+```{r, }
+fitdistr_sample <- rexp(1000, lamda$estimate)
+```
+
+
+
+```{r, echo=FALSE}
+hist(X, xlab="X", main='Previously selected X histogram', freq = FALSE)
+lines(seq(0, 6000, by=.5), 
+      dnorm(seq(0, 6000, by=.5),
+            mean(X), 
+            sd(X)), 
+      col="blue")
+```
+
+```{r, echo=FALSE}
+hist(fitdistr_sample, xlab="samples", main='Samples histogram', freq =FALSE)
+lines(seq(0, 6000, by=.5), 
+      dnorm(seq(0, 6000, by=.5),
+            mean(fitdistr_sample), 
+            sd(fitdistr_sample)), 
+      col="blue")
+```
+
+```{r, echo=FALSE}
+library(ggplot2)
+X1 <- data.frame(sqf = sample(X,1000))
+X2 <- data.frame(sqf = fitdistr_sample)
+
+X1$type <- 'X'
+X2$type <- 'Exp'
+
+XX <- rbind(X1, X2)
+
+ggplot(XX, aes(sqf, fill = type)) + geom_density(alpha = 0.2)
+```
+
+```{r, echo=FALSE}
+ggplot(XX, aes(sqf, fill = type)) + geom_histogram(alpha = 0.5, aes(y = ..density..), position = 'identity')
+```
+
+## Find Percentiles using the exponential PDF.
+
+```{r, }
+qlow <- qexp(0.05,lamda$estimate)
+qup <- qexp(0.95,lamda$estimate)
+```
+
+The 5th percentile will be `r round(qlow,2)`.
+
+The 95th percentile will be `r round(qup,2)`.
+
+
+Comparing to quantiles for `X`.
+
+```{r}
+quantile(X, c(.05, 0.95))
+```
+
+
+Comparing to quantiles for `fitdistr_sample`.
+
+```{r}
+round(quantile(fitdistr_sample, c(.05, 0.95)),2)
+```
+
+## Confidence Interval
+
+**Confidence interval on Exponential sample data.**
+
+```{r}
+#se <- mean(fitdistr_sample) / sqrt(1000)
+se <- 1 / (lamda$estimate * sqrt(1000))
+lower = mean(fitdistr_sample) - 1.96 * se
+upper = mean(fitdistr_sample) + 1.96 * se
+```
+
+The 95% Confidence interval on the exponential approximation will be from `r round(lower,0)` to `r round(upper,0)`.
+
+**Confidence interval on provided training data assuming normality.**
+
+```{r}
+lower <- qnorm(.05,mean(X),sd(X))
+upper <- qnorm(.95,mean(X),sd(X))
+```
+
+The 95% Confidence interval on the provided training data set will be from `r round(lower,0)` to `r round(upper,0)`.
+
+From the above we can conclude that we could approximate this data sets in a "Normalized fashion", even though the analysis was performed with exponential distribution; the above due to we quickly identify that in our particular case, the exponential distribution does not follow or perform a good match for our data set since the tentative values are way off from our real values from the data set. The normal distribution seems to provide better approximations.
+
+
+# Modeling
+
+## Removing "duplicate" or "non valuable information" columns
+
+
+```{r}
+# Removing basement "duplicate" columns
+removevars <- names(train) %in% c("Id", "BsmtExposure","BsmtFinType1", "BsmtFinSF1", "BsmtFinType2", "BsmtFinSF2", "BsmtFullBath","BsmtHalfBath")
+my_train <- train[!removevars]
+```
+
+```{r}
+# Removing Bath "duplicate" columns
+removevars <- names(my_train) %in% c("HalfBath")
+my_train <- my_train[!removevars]
+```
+
+```{r}
+# Removing Fireplace "duplicate" columns
+removevars <- names(my_train) %in% c("FireplaceQu")
+my_train <- my_train[!removevars]
+```
+
+```{r}
+# Removing Garage "duplicate" columns
+removevars <- names(my_train) %in% c("GarageYrBlt", "GarageYrBlt", "GarageCars", "GarageQual", "GarageCond")
+my_train <- my_train[!removevars]
+```
+
+```{r}
+# Removing Floors "duplicate" columns
+removevars <- names(my_train) %in% c("X2ndFlrSF", "LowQualFinSF")
+my_train <- my_train[!removevars]
+```
+
+```{r}
+# Removing Kitchen "duplicate" columns
+removevars <- names(my_train) %in% c("KitchenAbvGr")
+my_train <- my_train[!removevars]
+```
+
+```{r,}
+# Removing Porch "duplicate" columns
+my_train$PorchSF <- my_train$OpenPorchSF + my_train$EnclosedPorch + my_train$X3SsnPorch + my_train$ScreenPorch
+removevars <- names(my_train) %in% c("OpenPorchSF", "EnclosedPorch", "X3SsnPorch", "ScreenPorch")
+my_train <- my_train[!removevars]
+```
+
+```{r, }
+# Removing Misc "duplicate" columns
+removevars <- names(my_train) %in% c("PoolQC", "Fence", "MiscFeature", "MiscVal")
+my_train <- my_train[!removevars]
+```
+
+After some "clean up" I end up with `r length(my_train)` columns; from here onward I will start to do some extra clean up in terms of creating "dummy" values for the categorical values and taking care for NA values.
+
+## Taking care of NA Values
+
+
+
+```{r, }
+# MSSubClass
+# No need to assign, already has correct data
+```
+
+```{r, echo=FALSE}
+#plot(my_train$MSSubClass, my_train$SalePrice)
+#boxplot(my_train$SalePrice ~ my_train$MSSubClass)
+```
+
+
+```{r, }
+# Assigning "Dummy values" MSZoning
+#my_train$MSZoning[is.na(my_train$MSZoning) == TRUE] <- 0 # Treating NA as non existent since there were only a few.
+my_train$MSZoning[my_train$MSZoning == 'A'] <- 0
+my_train$MSZoning[my_train$MSZoning == 'C'] <- 1
+my_train$MSZoning[my_train$MSZoning == 'C (all)'] <- 1
+my_train$MSZoning[my_train$MSZoning == 'FV'] <- 2
+my_train$MSZoning[my_train$MSZoning == 'I'] <- 3
+my_train$MSZoning[my_train$MSZoning == 'RH'] <- 4
+my_train$MSZoning[my_train$MSZoning == 'RL'] <- 5
+my_train$MSZoning[my_train$MSZoning == 'RP'] <- 6
+my_train$MSZoning[my_train$MSZoning == 'RM'] <- 7
+my_train$MSZoning <- as.numeric(my_train$MSZoning)
+
+#unique(my_train$MSZoning)
+```
+
+```{r, echo=FALSE}
+#plot(my_train$MSZoning, my_train$SalePrice)
+#boxplot(my_train$SalePrice ~ my_train$MSZoning)
+```
+
+```{r}
+# Assigning mean value instead of NA
+my_train$LotFrontage[is.na(my_train$LotFrontage) == TRUE] <- mean(my_train$LotFrontage, na.rm=TRUE)
+
+# Test needs to be aggregated
+test$LotFrontage[is.na(test$LotFrontage) == TRUE] <- mean(test$LotFrontage, na.rm=TRUE)
+```
+
+```{r, echo=FALSE}
+#plot(my_train$LotFrontage, my_train$SalePrice)
+#boxplot(my_train$LotFrontage)
+```
+
+```{r}
+# Assigning mean value instead of NA
+my_train$MasVnrArea[is.na(my_train$MasVnrArea) == TRUE] <- mean(my_train$MasVnrArea, na.rm=TRUE)
+```
+
+```{r, echo=FALSE}
+#plot(my_train$MasVnrArea, my_train$SalePrice)
+#boxplot(my_train$MasVnrArea)
+```
+
+```{r}
+# Assining "Dummy values" MSZoning
+my_train$Street[my_train$Street == 'Grvl'] <- 0
+my_train$Street[my_train$Street == 'Pave'] <- 1
+my_train$Street <- as.numeric(my_train$Street)
+#unique(my_train$Street)
+```
+
+```{r, echo=FALSE}
+#plot(my_train$Street, my_train$SalePrice)
+#boxplot(my_train$SalePric ~ my_train$Street)
+```
+
+```{r}
+# Assining "Dummy values" Alley
+my_train$Alley[is.na(my_train$Alley) == TRUE] <- 0
+my_train$Alley[my_train$Alley == 'Grvl'] <- 1
+my_train$Alley[my_train$Alley == 'Pave'] <- 2
+my_train$Alley <- as.numeric(my_train$Alley)
+
+#unique(my_train$Alley)
+```
+
+```{r, echo=FALSE}
+#plot(my_train$Alley, my_train$SalePrice)
+#boxplot(my_train$SalePrice ~ my_train$Alley)
+```
+
+
+```{r}
+# Assining "Dummy values" LotShape
+#my_train$LotShape[is.na(my_train$LotShape) == TRUE] <- 0
+my_train$LotShape[my_train$LotShape == 'Reg'] <- 1
+my_train$LotShape[my_train$LotShape == 'IR1'] <- 2
+my_train$LotShape[my_train$LotShape == 'IR2'] <- 3
+my_train$LotShape[my_train$LotShape == 'IR3'] <- 4
+my_train$LotShape <- as.numeric(my_train$LotShape)
+
+#unique(train$LotShape)
+#unique(test$LotShape)
+
+# Need to transform in test as well
+# test$LotShape[is.na(test$LotShape) == TRUE] <- 0
+test$LotShape[test$LotShape == 'Reg'] <- 1
+test$LotShape[test$LotShape == 'IR1'] <- 2
+test$LotShape[test$LotShape == 'IR2'] <- 3
+test$LotShape[test$LotShape == 'IR3'] <- 4
+test$LotShape <- as.numeric(test$LotShape)
+
+```
+
+```{r, echo=FALSE}
+#plot(my_train$LotShape, my_train$SalePrice)
+#boxplot(my_train$SalePrice ~ my_train$LotShape)
+```
+
+```{r}
+# Assining "Dummy values" LandContour
+#my_train$LandContour[is.na(my_train$LandContour) == TRUE] <- 0
+my_train$LandContour[my_train$LandContour == 'Lvl'] <- 1
+my_train$LandContour[my_train$LandContour == 'Bnk'] <- 2
+my_train$LandContour[my_train$LandContour == 'HLS'] <- 3
+my_train$LandContour[my_train$LandContour == 'Low'] <- 4
+my_train$LandContour <- as.numeric(my_train$LandContour)
+
+#unique(my_train$LandContour)
+```
+
+```{r, echo=FALSE}
+#plot(my_train$LandContour, my_train$SalePrice)
+#boxplot(my_train$SalePrice ~ my_train$LandContour)
+```
+
+```{r}
+# Assining "Dummy values" Utilities
+my_train$Utilities[is.na(my_train$Utilities) == TRUE] <- 0
+my_train$Utilities[my_train$Utilities == 'AllPub'] <- 1
+my_train$Utilities[my_train$Utilities == 'NoSewr'] <- 2
+my_train$Utilities[my_train$Utilities == 'NoSeWa'] <- 3
+my_train$Utilities[my_train$Utilities == 'ELO'] <- 4
+my_train$Utilities <- as.numeric(my_train$Utilities)
+
+#unique(my_train$Utilities)
+```
+
+```{r, echo=FALSE}
+#plot(my_train$Utilities, my_train$SalePrice)
+#boxplot(my_train$SalePrice ~ my_train$Utilities)
+```
+
+
+```{r}
+# Assining "Dummy values" LotConfig
+#my_train$LotConfig[is.na(my_train$LotConfig) == TRUE] <- 0
+my_train$LotConfig[my_train$LotConfig == 'Inside'] <- 1
+my_train$LotConfig[my_train$LotConfig == 'Corner'] <- 2
+my_train$LotConfig[my_train$LotConfig == 'CulDSac'] <- 3
+my_train$LotConfig[my_train$LotConfig == 'FR2'] <- 4
+my_train$LotConfig[my_train$LotConfig == 'FR3'] <- 5
+my_train$LotConfig <- as.numeric(my_train$LotConfig)
+
+#unique(my_train$LotConfig)
+```
+
+```{r, echo=FALSE}
+#plot(my_train$LotConfig, my_train$SalePrice)
+#boxplot(my_train$SalePrice ~ my_train$LotConfig)
+```
+
+
+```{r}
+# Assining "Dummy values" LandSlope
+#my_train$LandSlope[is.na(my_train$LandSlope) == TRUE] <- 0
+my_train$LandSlope[my_train$LandSlope == 'Gtl'] <- 0
+my_train$LandSlope[my_train$LandSlope == 'Mod'] <- 1
+my_train$LandSlope[my_train$LandSlope == 'Sev'] <- 2
+my_train$LandSlope <- as.numeric(my_train$LandSlope)
+
+#unique(my_train$LandSlope)
+```
+
+```{r, echo=FALSE}
+#plot(my_train$LandSlope, my_train$SalePrice)
+#boxplot(my_train$SalePrice ~ my_train$LandSlope)
+```
+
+
+```{r}
+# Assining "Dummy values" Neighborhood
+#my_train$Neighborhood[is.na(my_train$Neighborhood) == TRUE] <- 0
+my_train$Neighborhood[my_train$Neighborhood == 'Blmngtn'] <- 0
+my_train$Neighborhood[my_train$Neighborhood == 'Blueste'] <- 1
+my_train$Neighborhood[my_train$Neighborhood == 'BrDale'] <- 2
+my_train$Neighborhood[my_train$Neighborhood == 'BrkSide'] <- 3
+my_train$Neighborhood[my_train$Neighborhood == 'ClearCr'] <- 4
+my_train$Neighborhood[my_train$Neighborhood == 'CollgCr'] <- 5
+my_train$Neighborhood[my_train$Neighborhood == 'Crawfor'] <- 6
+my_train$Neighborhood[my_train$Neighborhood == 'Edwards'] <- 7
+my_train$Neighborhood[my_train$Neighborhood == 'Gilbert'] <- 8
+my_train$Neighborhood[my_train$Neighborhood == 'IDOTRR'] <- 9
+my_train$Neighborhood[my_train$Neighborhood == 'MeadowV'] <- 10
+my_train$Neighborhood[my_train$Neighborhood == 'Mitchel'] <- 11
+my_train$Neighborhood[my_train$Neighborhood == 'Names'] <- 12
+my_train$Neighborhood[my_train$Neighborhood == 'NoRidge'] <- 13
+my_train$Neighborhood[my_train$Neighborhood == 'NPkVill'] <- 14
+my_train$Neighborhood[my_train$Neighborhood == 'NridgHt'] <- 15
+my_train$Neighborhood[my_train$Neighborhood == 'NWAmes'] <- 16
+my_train$Neighborhood[my_train$Neighborhood == 'NAmes'] <- 16
+my_train$Neighborhood[my_train$Neighborhood == 'OldTown'] <- 17
+my_train$Neighborhood[my_train$Neighborhood == 'SWISU'] <- 18
+my_train$Neighborhood[my_train$Neighborhood == 'Sawyer'] <- 19
+my_train$Neighborhood[my_train$Neighborhood == 'SawyerW'] <- 20
+my_train$Neighborhood[my_train$Neighborhood == 'Somerst'] <- 21
+my_train$Neighborhood[my_train$Neighborhood == 'StoneBr'] <- 22
+my_train$Neighborhood[my_train$Neighborhood == 'Timber'] <- 23
+my_train$Neighborhood[my_train$Neighborhood == 'Veenker'] <- 24
+my_train$Neighborhood <- as.numeric(my_train$Neighborhood)
+
+#unique(my_train$Neighborhood)
+```
+
+```{r, echo=FALSE}
+#plot(my_train$Neighborhood, my_train$SalePrice)
+#boxplot(my_train$SalePrice ~ my_train$Neighborhood)
+```
+
+
+```{r}
+# Assining "Dummy values" Condition1
+#my_train$Condition1[is.na(my_train$Condition1) == TRUE] <- 0
+my_train$Condition1[my_train$Condition1 == 'Artery'] <- 0
+my_train$Condition1[my_train$Condition1 == 'Feedr'] <- 1
+my_train$Condition1[my_train$Condition1 == 'Norm'] <- 2
+my_train$Condition1[my_train$Condition1 == 'RRNn'] <- 3
+my_train$Condition1[my_train$Condition1 == 'RRAn'] <- 4
+my_train$Condition1[my_train$Condition1 == 'PosN'] <- 5
+my_train$Condition1[my_train$Condition1 == 'PosA'] <- 6
+my_train$Condition1[my_train$Condition1 == 'RRNe'] <- 7
+my_train$Condition1[my_train$Condition1 == 'RRAe'] <- 8
+my_train$Condition1 <- as.numeric(my_train$Condition1)
+
+#unique(my_train$Condition1)
+```
+
+```{r, echo=FALSE}
+#plot(my_train$Condition1, my_train$SalePrice)
+#boxplot(my_train$SalePrice ~ my_train$Condition1)
+```
+
+
+```{r}
+# Assining "Dummy values" Condition2
+#my_train$Condition2[is.na(my_train$Condition2) == TRUE] <- 0
+my_train$Condition2[my_train$Condition2 == 'Artery'] <- 0
+my_train$Condition2[my_train$Condition2 == 'Feedr'] <- 1
+my_train$Condition2[my_train$Condition2 == 'Norm'] <- 2
+my_train$Condition2[my_train$Condition2 == 'RRNn'] <- 3
+my_train$Condition2[my_train$Condition2 == 'RRAn'] <- 4
+my_train$Condition2[my_train$Condition2 == 'PosN'] <- 5
+my_train$Condition2[my_train$Condition2 == 'PosA'] <- 6
+my_train$Condition2[my_train$Condition2 == 'RRNe'] <- 7
+my_train$Condition2[my_train$Condition2 == 'RRAe'] <- 8
+my_train$Condition2 <- as.numeric(my_train$Condition2)
+
+#unique(my_train$Condition2)
+```
+
+```{r, echo=FALSE}
+#plot(my_train$Condition2, my_train$SalePrice)
+#boxplot(my_train$SalePrice ~ my_train$Condition2)
+```
+
+
+```{r}
+# Assining "Dummy values" BldgType
+#my_train$BldgType[is.na(my_train$BldgType) == TRUE] <- 0
+my_train$BldgType[my_train$BldgType == '1Fam'] <- 0
+my_train$BldgType[my_train$BldgType == '2FmCon'] <- 1
+my_train$BldgType[my_train$BldgType == '2fmCon'] <- 1
+my_train$BldgType[my_train$BldgType == 'Duplx'] <- 2
+my_train$BldgType[my_train$BldgType == 'Duplex'] <- 2
+my_train$BldgType[my_train$BldgType == 'TwnhsE'] <- 3
+my_train$BldgType[my_train$BldgType == 'TwnhsI'] <- 4
+my_train$BldgType[my_train$BldgType == 'Twnhs'] <- 4
+my_train$BldgType <- as.numeric(my_train$BldgType)
+
+#my_train$BldgType <- train$BldgType
+#unique(my_train$BldgType)
+```
+
+```{r, echo=FALSE}
+#plot(my_train$BldgType, my_train$SalePrice)
+#boxplot(my_train$SalePrice ~ my_train$BldgType)
+```
+
+
+```{r}
+# Assining "Dummy values" HouseStyle
+#my_train$HouseStyle[is.na(my_train$HouseStyle) == TRUE] <- 0
+my_train$HouseStyle[my_train$HouseStyle == '1Story'] <- 0
+my_train$HouseStyle[my_train$HouseStyle == '1.5Fin'] <- 1
+my_train$HouseStyle[my_train$HouseStyle == '1.5Unf'] <- 1
+my_train$HouseStyle[my_train$HouseStyle == '2Story'] <- 2
+my_train$HouseStyle[my_train$HouseStyle == '2.5Fin'] <- 2
+my_train$HouseStyle[my_train$HouseStyle == '2.5Unf'] <- 3
+my_train$HouseStyle[my_train$HouseStyle == 'SFoyer'] <- 4
+my_train$HouseStyle[my_train$HouseStyle == 'SLvl'] <- 4
+my_train$HouseStyle <- as.numeric(my_train$HouseStyle)
+
+#my_train$HouseStyle <- train$HouseStyle
+#unique(my_train$HouseStyle)
+```
+
+```{r, echo=FALSE}
+#plot(my_train$HouseStyle, my_train$SalePrice)
+#boxplot(my_train$SalePrice ~ my_train$HouseStyle)
+```
+
+
+```{r}
+# Assining "Dummy values" OverallQual
+# Complete set, nothing to do.
+#unique(my_train$OverallQual)
+
+#test$OverallQual[is.na(test$OverallQual) == TRUE] <- 0
+```
+
+```{r, echo=FALSE}
+#plot(my_train$OverallQual, my_train$SalePrice)
+#boxplot(my_train$SalePrice ~ my_train$OverallQual)
+# This seems to follow an exponential pattern.
+```
+
+
+```{r}
+# Assining "Dummy values" OverallCond
+# Seems to be complete dataset
+
+#my_train$OverallCond <- train$OverallCond
+#unique(my_train$OverallCond)
+```
+
+```{r, echo=FALSE}
+#plot(my_train$OverallCond, my_train$SalePrice)
+#boxplot(my_train$SalePrice ~ my_train$OverallCond)
+```
+
+
+```{r}
+# Assining "Dummy values" YearBuilt
+# Seems to be complete dataset
+
+#my_train$YearBuilt <- train$YearBuilt
+#unique(my_train$YearBuilt)
+
+#test$YearBuilt[is.na(test$YearBuilt) == TRUE] 
+```
+
+```{r, echo=FALSE}
+#plot(my_train$YearBuilt, my_train$SalePrice)
+#boxplot(my_train$SalePrice ~ my_train$YearBuilt)
+```
+
+
+```{r}
+# Assining "Dummy values" YearRemodAdd
+# Seems to be complete dataset
+
+#my_train$YearRemodAdd <- train$YearRemodAdd
+#unique(my_train$YearRemodAdd)
+
+#test$YearRemodAdd[is.na(test$YearRemodAdd) == TRUE] 
+```
+
+```{r, echo=FALSE}
+#plot(my_train$YearRemodAdd, my_train$SalePrice)
+#boxplot(my_train$SalePrice ~ my_train$YearRemodAdd)
+```
+
+```{r}
+# Assining "Dummy values" RoofStyle
+#my_train$RoofStyle[is.na(my_train$RoofStyle) == TRUE] <- 0
+my_train$RoofStyle[my_train$RoofStyle == 'Flat'] <- 0
+my_train$RoofStyle[my_train$RoofStyle == 'Gable'] <- 1
+my_train$RoofStyle[my_train$RoofStyle == 'Gambrel'] <- 2
+my_train$RoofStyle[my_train$RoofStyle == 'Hip'] <- 3
+my_train$RoofStyle[my_train$RoofStyle == 'Mansard'] <- 4
+my_train$RoofStyle[my_train$RoofStyle == 'Shed'] <- 5
+my_train$RoofStyle <- as.numeric(my_train$RoofStyle)
+
+#my_train$RoofStyle <- train$RoofStyle
+#unique(my_train$RoofStyle)
+```
+
+```{r, echo=FALSE}
+#plot(my_train$RoofStyle, my_train$SalePrice)
+#boxplot(my_train$SalePrice ~ my_train$RoofStyle)
+```
+
+
+```{r}
+# Assining "Dummy values" RoofMatl
+#my_train$RoofMatl[is.na(my_train$RoofMatl) == TRUE] <- 0
+my_train$RoofMatl[my_train$RoofMatl == 'ClyTile'] <- 0
+my_train$RoofMatl[my_train$RoofMatl == 'CompShg'] <- 1
+my_train$RoofMatl[my_train$RoofMatl == 'Membran'] <- 2
+my_train$RoofMatl[my_train$RoofMatl == 'Metal'] <- 3
+my_train$RoofMatl[my_train$RoofMatl == 'Roll'] <- 4
+my_train$RoofMatl[my_train$RoofMatl == 'Tar&Grv'] <- 5
+my_train$RoofMatl[my_train$RoofMatl == 'WdShake'] <- 6
+my_train$RoofMatl[my_train$RoofMatl == 'WdShngl'] <- 7
+my_train$RoofMatl <- as.numeric(my_train$RoofMatl)
+
+#my_train$RoofMatl <- train$RoofMatl
+#unique(my_train$RoofMatl)
+```
+
+```{r, echo=FALSE}
+#plot(my_train$RoofMatl, my_train$SalePrice)
+#boxplot(my_train$SalePrice ~ my_train$RoofMatl)
+```
+
+
+```{r}
+# Assining "Dummy values" Exterior1st
+#my_train$Exterior1st[is.na(my_train$Exterior1st) == TRUE] <- 0
+my_train$Exterior1st[my_train$Exterior1st == 'AsbShng'] <- 0
+my_train$Exterior1st[my_train$Exterior1st == 'AsphShn'] <- 1
+my_train$Exterior1st[my_train$Exterior1st == 'BrkComm'] <- 2
+my_train$Exterior1st[my_train$Exterior1st == 'BrkFace'] <- 3
+my_train$Exterior1st[my_train$Exterior1st == 'CBlock'] <- 4
+my_train$Exterior1st[my_train$Exterior1st == 'CemntBd'] <- 5
+my_train$Exterior1st[my_train$Exterior1st == 'HdBoard'] <- 6
+my_train$Exterior1st[my_train$Exterior1st == 'ImStucc'] <- 7
+my_train$Exterior1st[my_train$Exterior1st == 'MetalSd'] <- 8
+my_train$Exterior1st[my_train$Exterior1st == 'Other'] <- 9
+my_train$Exterior1st[my_train$Exterior1st == 'Plywood'] <- 10
+my_train$Exterior1st[my_train$Exterior1st == 'PreCast'] <- 11
+my_train$Exterior1st[my_train$Exterior1st == 'Stone'] <- 12
+my_train$Exterior1st[my_train$Exterior1st == 'Stucco'] <- 13
+my_train$Exterior1st[my_train$Exterior1st == 'VinylSd'] <- 14
+my_train$Exterior1st[my_train$Exterior1st == 'Wd Sdng'] <- 15
+my_train$Exterior1st[my_train$Exterior1st == 'WdShing'] <- 16
+
+my_train$Exterior1st <- as.numeric(my_train$Exterior1st)
+
+#my_train$Exterior1st <- train$Exterior1st
+#unique(my_train$Exterior1st)
+```
+
+```{r, echo=FALSE}
+#plot(my_train$Exterior1st, my_train$SalePrice)
+#boxplot(my_train$SalePrice ~ my_train$Exterior1st)
+```
+
+
+```{r}
+# Assining "Dummy values" Exterior2nd
+#my_train$Exterior2nd[is.na(my_train$Exterior2nd) == TRUE] <- 0
+my_train$Exterior2nd[my_train$Exterior2nd == 'AsbShng'] <- 0
+my_train$Exterior2nd[my_train$Exterior2nd == 'AsphShn'] <- 1
+my_train$Exterior2nd[my_train$Exterior2nd == 'BrkComm'] <- 2
+my_train$Exterior2nd[my_train$Exterior2nd == 'Brk Cmn'] <- 2
+my_train$Exterior2nd[my_train$Exterior2nd == 'BrkFace'] <- 3
+my_train$Exterior2nd[my_train$Exterior2nd == 'CBlock'] <- 4
+my_train$Exterior2nd[my_train$Exterior2nd == 'CemntBd'] <- 5
+my_train$Exterior2nd[my_train$Exterior2nd == 'CmentBd'] <- 5
+my_train$Exterior2nd[my_train$Exterior2nd == 'HdBoard'] <- 6
+my_train$Exterior2nd[my_train$Exterior2nd == 'ImStucc'] <- 7
+my_train$Exterior2nd[my_train$Exterior2nd == 'MetalSd'] <- 8
+my_train$Exterior2nd[my_train$Exterior2nd == 'Other'] <- 9
+my_train$Exterior2nd[my_train$Exterior2nd == 'Plywood'] <- 10
+my_train$Exterior2nd[my_train$Exterior2nd == 'PreCast'] <- 11
+my_train$Exterior2nd[my_train$Exterior2nd == 'Stone'] <- 12
+my_train$Exterior2nd[my_train$Exterior2nd == 'Stucco'] <- 13
+my_train$Exterior2nd[my_train$Exterior2nd == 'VinylSd'] <- 14
+my_train$Exterior2nd[my_train$Exterior2nd == 'Wd Sdng'] <- 15
+my_train$Exterior2nd[my_train$Exterior2nd == 'WdShing'] <- 16
+my_train$Exterior2nd[my_train$Exterior2nd == 'Wd Shng'] <- 16
+
+my_train$Exterior2nd <- as.numeric(my_train$Exterior2nd)
+
+#my_train$Exterior2nd <- train$Exterior2nd
+#unique(my_train$Exterior2nd)
+```
+
+```{r, echo=FALSE}
+#plot(my_train$Exterior2nd, my_train$SalePrice)
+#boxplot(my_train$SalePrice ~ my_train$Exterior2nd)
+```
+
+
+```{r}
+# Assining "Dummy values" MasVnrType
+my_train$MasVnrType[is.na(my_train$MasVnrType) == TRUE] <- 0
+my_train$MasVnrType[my_train$MasVnrType == 'None'] <- 0
+my_train$MasVnrType[my_train$MasVnrType == 'Stone'] <- 1
+my_train$MasVnrType[my_train$MasVnrType == 'CBlock'] <- 2
+my_train$MasVnrType[my_train$MasVnrType == 'BrkFace'] <- 3
+my_train$MasVnrType[my_train$MasVnrType == 'BrkCmn'] <- 4
+
+
+my_train$MasVnrType <- as.numeric(my_train$MasVnrType)
+
+#my_train$MasVnrType <- train$MasVnrType
+#unique(my_train$MasVnrType)
+```
+
+```{r, echo=FALSE}
+#plot(my_train$MasVnrType, my_train$SalePrice)
+#boxplot(my_train$SalePrice ~ my_train$MasVnrType)
+```
+
+
+```{r}
+# Assining "Dummy values" MasVnrArea
+# Nothing to do seems to be complete
+#unique(my_train$MasVnrArea)
+
+test$MasVnrArea[is.na(test$MasVnrArea) == TRUE] <- mean(test$MasVnrArea, na.rm = TRUE)
+```
+
+```{r, echo=FALSE}
+#plot(my_train$MasVnrArea, my_train$SalePrice)
+#boxplot(my_train$SalePrice ~ my_train$MasVnrArea)
+```
+
+
+```{r}
+# Assining "Dummy values" ExterQual
+#my_train$ExterQual[is.na(my_train$ExterQual) == TRUE] <- 0
+my_train$ExterQual[my_train$ExterQual == 'Po'] <- 0
+my_train$ExterQual[my_train$ExterQual == 'Fa'] <- 1
+my_train$ExterQual[my_train$ExterQual == 'TA'] <- 2
+my_train$ExterQual[my_train$ExterQual == 'Gd'] <- 3
+my_train$ExterQual[my_train$ExterQual == 'Ex'] <- 4
+
+my_train$ExterQual <- as.numeric(my_train$ExterQual)
+
+#my_train$ExterQual <- train$ExterQual
+#unique(my_train$ExterQual)
+
+# Need to tranform in test
+#test$ExterQual[is.na(test$ExterQual) == TRUE]
+test$ExterQual[test$ExterQual == 'Po'] <- 0
+test$ExterQual[test$ExterQual == 'Fa'] <- 1
+test$ExterQual[test$ExterQual == 'TA'] <- 2
+test$ExterQual[test$ExterQual == 'Gd'] <- 3
+test$ExterQual[test$ExterQual == 'Ex'] <- 4
+
+test$ExterQual <- as.numeric(test$ExterQual)
+```
+
+```{r, echo=FALSE}
+#plot(my_train$ExterQual, my_train$SalePrice)
+#boxplot(my_train$SalePrice ~ my_train$ExterQual)
+```
+
+
+```{r}
+# Assining "Dummy values" ExterCond
+#my_train$ExterCond[is.na(my_train$ExterCond) == TRUE] <- 0
+my_train$ExterCond[my_train$ExterCond == 'Po'] <- 0
+my_train$ExterCond[my_train$ExterCond == 'Fa'] <- 1
+my_train$ExterCond[my_train$ExterCond == 'TA'] <- 2
+my_train$ExterCond[my_train$ExterCond == 'Gd'] <- 3
+my_train$ExterCond[my_train$ExterCond == 'Ex'] <- 4
+
+my_train$ExterCond <- as.numeric(my_train$ExterCond)
+
+#my_train$ExterCond <- train$ExterCond
+#unique(my_train$ExterCond)
+```
+
+```{r, echo=FALSE}
+#plot(my_train$ExterCond, my_train$SalePrice)
+#boxplot(my_train$SalePrice ~ my_train$ExterCond)
+```
+
+```{r}
+# Assining "Dummy values" Foundation
+#my_train$Foundation[is.na(my_train$Foundation) == TRUE] <- 0
+my_train$Foundation[my_train$Foundation == 'Wood'] <- 0
+my_train$Foundation[my_train$Foundation == 'Stone'] <- 1
+my_train$Foundation[my_train$Foundation == 'Slab'] <- 2
+my_train$Foundation[my_train$Foundation == 'PConc'] <- 3
+my_train$Foundation[my_train$Foundation == 'CBlock'] <- 4
+my_train$Foundation[my_train$Foundation == 'BrkTil'] <- 5
+
+my_train$Foundation <- as.numeric(my_train$Foundation)
+
+#my_train$Foundation <- train$Foundation
+#unique(my_train$Foundation)
+```
+
+```{r, echo=FALSE}
+#plot(my_train$Foundation, my_train$SalePrice)
+#boxplot(my_train$SalePrice ~ my_train$Foundation)
+```
+
+
+```{r}
+# Assining "Dummy values" BsmtQual
+my_train$BsmtQual[is.na(my_train$BsmtQual) == TRUE] <- 0
+my_train$BsmtQual[my_train$BsmtQual == 'Po'] <- 0
+my_train$BsmtQual[my_train$BsmtQual == 'Fa'] <- 1
+my_train$BsmtQual[my_train$BsmtQual == 'TA'] <- 2
+my_train$BsmtQual[my_train$BsmtQual == 'Gd'] <- 3
+my_train$BsmtQual[my_train$BsmtQual == 'Ex'] <- 4
+
+my_train$BsmtQual <- as.numeric(my_train$BsmtQual)
+
+#my_train$BsmtQual <- train$BsmtQual
+#unique(my_train$BsmtQual)
+
+# Need to transform in test as well
+test$BsmtQual[is.na(test$BsmtQual) == TRUE] <- 0
+test$BsmtQual[test$BsmtQual == 'Po'] <- 0
+test$BsmtQual[test$BsmtQual == 'Fa'] <- 1
+test$BsmtQual[test$BsmtQual == 'TA'] <- 2
+test$BsmtQual[test$BsmtQual == 'Gd'] <- 3
+test$BsmtQual[test$BsmtQual == 'Ex'] <- 4
+
+test$BsmtQual <- as.numeric(test$BsmtQual)
+```
+
+```{r, echo=FALSE}
+#plot(my_train$BsmtQual, my_train$SalePrice)
+#boxplot(my_train$SalePrice ~ my_train$BsmtQual)
+```
+
+
+
+```{r}
+# Assining "Dummy values" BsmtCond
+my_train$BsmtCond[is.na(my_train$BsmtCond) == TRUE] <- 0
+my_train$BsmtCond[my_train$BsmtCond == 'Po'] <- 0
+my_train$BsmtCond[my_train$BsmtCond == 'Fa'] <- 1
+my_train$BsmtCond[my_train$BsmtCond == 'TA'] <- 2
+my_train$BsmtCond[my_train$BsmtCond == 'Gd'] <- 3
+my_train$BsmtCond[my_train$BsmtCond == 'Ex'] <- 4
+
+my_train$BsmtCond <- as.numeric(my_train$BsmtCond)
+
+#my_train$BsmtCond <- train$BsmtCond
+#unique(my_train$BsmtCond)
+```
+
+```{r, echo=FALSE}
+#plot(my_train$BsmtCond, my_train$SalePrice)
+#boxplot(my_train$SalePrice ~ my_train$BsmtCond)
+```
+
+
+```{r}
+# Assining "Dummy values" BsmtUnfSF
+# Nothing to do, seems to be complete
+#unique(my_train$BsmtUnfSF)
+```
+
+```{r, echo=FALSE}
+#plot(my_train$BsmtUnfSF, my_train$SalePrice)
+#boxplot(my_train$SalePrice ~ my_train$BsmtUnfSF)
+```
+
+
+```{r}
+# Assining "Dummy values" TotalBsmtSF
+# Nothing to do, seems to be complete
+#unique(my_train$TotalBsmtSF)
+
+# Need to adjust for test
+test$TotalBsmtSF[is.na(test$TotalBsmtSF) == TRUE] <- mean(test$TotalBsmtSF, na.rm = TRUE)
+```
+
+```{r, echo=FALSE}
+#plot(my_train$TotalBsmtSF, my_train$SalePrice)
+#boxplot(my_train$SalePrice ~ my_train$TotalBsmtSF)
+
+my_train <- my_train[-(my_train$TotalBsmtSF > 6000),]
+my_train$TotalBsmtSF[my_train$TotalBsmtSF > 6000] <- mean(my_train$TotalBsmtSF[my_train$TotalBsmtSF < 6000]) # This is an outlier that should be "removed", I will reassign the mean from the same column from the readings not including that value from now on
+```
+
+```{r}
+# Assining "Dummy values" Heating
+#my_train$Heating[is.na(my_train$Heating) == TRUE] <- 0
+my_train$Heating[my_train$Heating == 'Floor'] <- 0
+my_train$Heating[my_train$Heating == 'GasA'] <- 1
+my_train$Heating[my_train$Heating == 'GasW'] <- 2
+my_train$Heating[my_train$Heating == 'Grav'] <- 3
+my_train$Heating[my_train$Heating == 'Wall'] <- 4
+my_train$Heating[my_train$Heating == 'OthW'] <- 5
+
+my_train$Heating <- as.numeric(my_train$Heating)
+
+#my_train$Heating <- train$Heating
+#unique(my_train$Heating)
+```
+
+```{r, echo=FALSE}
+#plot(my_train$Heating, my_train$SalePrice)
+#boxplot(my_train$SalePrice ~ my_train$Heating)
+```
+
+
+```{r}
+# Assining "Dummy values" HeatingQC
+#my_train$HeatingQC[is.na(my_train$HeatingQC) == TRUE] <- 0
+my_train$HeatingQC[my_train$HeatingQC == 'Po'] <- 0
+my_train$HeatingQC[my_train$HeatingQC == 'Fa'] <- 1
+my_train$HeatingQC[my_train$HeatingQC == 'TA'] <- 2
+my_train$HeatingQC[my_train$HeatingQC == 'Gd'] <- 3
+my_train$HeatingQC[my_train$HeatingQC == 'Ex'] <- 4
+my_train$HeatingQC <- as.numeric(my_train$HeatingQC)
+
+#my_train$HeatingQC <- train$HeatingQC
+#unique(my_train$HeatingQC)
+
+# Need to transform in test too.
+#test$HeatingQC[is.na(test$HeatingQC) == TRUE] <- 0
+test$HeatingQC[test$HeatingQC == 'Po'] <- 0
+test$HeatingQC[test$HeatingQC == 'Fa'] <- 1
+test$HeatingQC[test$HeatingQC == 'TA'] <- 2
+test$HeatingQC[test$HeatingQC == 'Gd'] <- 3
+test$HeatingQC[test$HeatingQC == 'Ex'] <- 4
+test$HeatingQC <- as.numeric(test$HeatingQC)
+
+```
+
+```{r, echo=FALSE}
+#plot(my_train$HeatingQC, my_train$SalePrice)
+#boxplot(my_train$SalePrice ~ my_train$HeatingQC)
+```
+
+
+```{r}
+# Assining "Dummy values" CentralAir
+#my_train$CentralAir[is.na(my_train$CentralAir) == TRUE] <- 0
+my_train$CentralAir[my_train$CentralAir == 'N'] <- 0
+my_train$CentralAir[my_train$CentralAir == 'Y'] <- 1
+my_train$CentralAir <- as.numeric(my_train$CentralAir)
+
+#my_train$CentralAir <- train$CentralAir
+#unique(my_train$CentralAir)
+```
+
+```{r, echo=FALSE}
+#plot(my_train$CentralAir, my_train$SalePrice)
+#boxplot(my_train$SalePrice ~ my_train$CentralAir)
+```
+
+
+```{r}
+# Assining "Dummy values" Electrical
+my_train$Electrical[is.na(my_train$Electrical) == TRUE] <- 0 # Use as standard
+my_train$Electrical[my_train$Electrical == 'SBrkr'] <- 0
+my_train$Electrical[my_train$Electrical == 'FuseA'] <- 1
+my_train$Electrical[my_train$Electrical == 'FuseF'] <- 2
+my_train$Electrical[my_train$Electrical == 'FuseP'] <- 3
+my_train$Electrical[my_train$Electrical == 'Mix'] <- 4
+
+my_train$Electrical <- as.numeric(my_train$Electrical)
+
+#my_train$CentralAir <- train$CentralAir
+#unique(my_train$Electrical)
+```
+
+```{r, echo=FALSE}
+#plot(my_train$CentralAir, my_train$SalePrice)
+#boxplot(my_train$SalePrice ~ my_train$CentralAir)
+```
+
+
+```{r}
+# Assining "Dummy values" X1stFlrSF
+# Seems to be complete data
+
+#my_train$X1stFlrSF <- train$X1stFlrSF
+#unique(my_train$X1stFlrSF)
+
+#Test
+#test$X1stFlrSF[is.na(test$X1stFlrSF) == TRUE] <- 0
+```
+
+```{r, echo=FALSE}
+#plot(my_train$X1stFlrSF, my_train$SalePrice)
+#boxplot(my_train$SalePrice ~ my_train$X1stFlrSF)
+
+#my_train$X1stFlrSF <- train$X1stFlrSF
+# my_train <- my_train[-(my_train$X1stFlrSF > 4000),]
+my_train$X1stFlrSF[my_train$X1stFlrSF > 4000] <- mean(my_train$X1stFlrSF[my_train$X1stFlrSF < 4000]) # This is an outlier that should be "removed", I will reassign the mean from the same column from the readings not including that value from now on
+```
+
+
+```{r}
+# Assining "Dummy values" GrLivArea
+# Seems to be complete data
+
+#my_train$GrLivArea <- train$GrLivArea
+#unique(my_train$GrLivArea)
+
+# Test
+#test$GrLivArea[is.na(test$GrLivArea) == TRUE] <- 0
+```
+
+```{r, echo=FALSE}
+#plot(my_train$GrLivArea, my_train$SalePrice)
+#boxplot(my_train$SalePrice ~ my_train$GrLivArea)
+
+#my_train[my_train$GrLivArea > 5000,] 
+my_train$GrLivArea[my_train$GrLivArea > 5000] <- mean(my_train$GrLivArea[my_train$GrLivArea < 5000]) # This is an outlier that should be "removed", I will reassign the mean from the same column from the readings not including that value from now on
+```
+
+
+```{r}
+# Assining "Dummy values" FullBath
+# Seems to be complete data
+
+#my_train$FullBath <- train$FullBath
+#unique(my_train$FullBath)
+
+# Test
+#test$FullBath[is.na(test$FullBath) == TRUE] <- 0
+```
+
+```{r, echo=FALSE}
+#plot(my_train$FullBath, my_train$SalePrice)
+#boxplot(my_train$SalePrice ~ my_train$FullBath)
+```
+
+
+
+```{r}
+# Assining "Dummy values" BedroomAbvGr
+# Seems to be complete data
+
+#my_train$BedroomAbvGr <- train$BedroomAbvGr
+#unique(my_train$BedroomAbvGr)
+```
+
+```{r, echo=FALSE}
+#plot(my_train$BedroomAbvGr, my_train$SalePrice)
+#boxplot(my_train$SalePrice ~ my_train$BedroomAbvGr)
+```
+
+```{r}
+# Assining "Dummy values" KitchenQual
+#my_train$KitchenQual[is.na(my_train$KitchenQual) == TRUE] <- 0
+my_train$KitchenQual[my_train$KitchenQual == 'Po'] <- 0
+my_train$KitchenQual[my_train$KitchenQual == 'Fa'] <- 1
+my_train$KitchenQual[my_train$KitchenQual == 'TA'] <- 2
+my_train$KitchenQual[my_train$KitchenQual == 'Gd'] <- 3
+my_train$KitchenQual[my_train$KitchenQual == 'Ex'] <- 4
+my_train$KitchenQual <- as.numeric(my_train$KitchenQual)
+
+#my_train$KitchenQual <- train$KitchenQual
+#unique(my_train$KitchenQual)
+
+# Need to transform in test as well
+test$KitchenQual[is.na(test$KitchenQual) == TRUE]  <- 2 # USe typical
+test$KitchenQual[test$KitchenQual == 'Po'] <- 0
+test$KitchenQual[test$KitchenQual == 'Fa'] <- 1
+test$KitchenQual[test$KitchenQual == 'TA'] <- 2
+test$KitchenQual[test$KitchenQual == 'Gd'] <- 3
+test$KitchenQual[test$KitchenQual == 'Ex'] <- 4
+test$KitchenQual <- as.numeric(test$KitchenQual)
+
+```
+
+```{r, echo=FALSE}
+#plot(my_train$KitchenQual, my_train$SalePrice)
+#boxplot(my_train$SalePrice ~ my_train$KitchenQual)
+```
+
+```{r}
+# Assining "Dummy values" TotRmsAbvGrd
+# Data seems to be complete
+
+#unique(my_train$TotRmsAbvGrd)
+
+# Test
+#test$TotRmsAbvGrd[is.na(test$TotRmsAbvGrd) == TRUE] <- 1
+```
+
+```{r, echo=FALSE}
+#plot(my_train$TotRmsAbvGrd, my_train$SalePrice)
+#boxplot(my_train$SalePrice ~ my_train$TotRmsAbvGrd)
+```
+
+
+```{r}
+# Assining "Dummy values" Functional
+my_train$Functional[is.na(my_train$Functional) == TRUE] <- 7
+my_train$Functional[my_train$Functional == 'Sal'] <- 0
+my_train$Functional[my_train$Functional == 'Sev'] <- 1
+my_train$Functional[my_train$Functional == 'Maj2'] <- 2
+my_train$Functional[my_train$Functional == 'Maj1'] <- 3
+my_train$Functional[my_train$Functional == 'Mod'] <- 4
+my_train$Functional[my_train$Functional == 'Min2'] <- 5
+my_train$Functional[my_train$Functional == 'Min1'] <- 6
+my_train$Functional[my_train$Functional == 'Typ'] <- 7
+my_train$Functional <- as.numeric(my_train$Functional)
+
+#my_train$Functional <- train$Functional
+#unique(my_train$Functional)
+```
+
+```{r, echo=FALSE}
+#plot(my_train$Functional, my_train$SalePrice)
+#boxplot(my_train$SalePrice ~ my_train$Functional)
+```
+
+
+```{r}
+# Assining "Dummy values" Fireplaces
+my_train$Fireplaces[is.na(my_train$Fireplaces) == TRUE] <- 0
+
+#my_train$Fireplaces <- train$Fireplaces
+#unique(my_train$Fireplaces)
+
+# Test
+test$Fireplaces[is.na(test$Fireplaces) == TRUE] <- 0
+```
+
+```{r, echo=FALSE}
+#plot(my_train$Fireplaces, my_train$SalePrice)
+#boxplot(my_train$SalePrice ~ my_train$Fireplaces)
+```
+
+
+```{r}
+# Assining "Dummy values" GarageType
+my_train$GarageType[is.na(my_train$GarageType) == TRUE] <- 0
+my_train$GarageType[my_train$GarageType == 'Detchd'] <- 1
+my_train$GarageType[my_train$GarageType == 'CarPort'] <- 2
+my_train$GarageType[my_train$GarageType == 'BuiltIn'] <- 3
+my_train$GarageType[my_train$GarageType == 'Basment'] <- 4
+my_train$GarageType[my_train$GarageType == 'Attchd'] <- 5
+my_train$GarageType[my_train$GarageType == '2Types'] <- 6
+
+my_train$GarageType <- as.numeric(my_train$GarageType)
+
+#my_train$GarageType <- train$GarageType
+#unique(my_train$GarageType)
+
+# Need to transform in test too
+test$GarageType[is.na(test$GarageType) == TRUE] <- 0
+test$GarageType[test$GarageType == 'Detchd'] <- 1
+test$GarageType[test$GarageType == 'CarPort'] <- 2
+test$GarageType[test$GarageType == 'BuiltIn'] <- 3
+test$GarageType[test$GarageType == 'Basment'] <- 4
+test$GarageType[test$GarageType == 'Attchd'] <- 5
+test$GarageType[test$GarageType == '2Types'] <- 6
+
+test$GarageType <- as.numeric(test$GarageType)
+```
+
+```{r, echo=FALSE}
+#plot(my_train$GarageType, my_train$SalePrice)
+#boxplot(my_train$SalePrice ~ my_train$GarageType)
+```
+
+
+```{r}
+# Assining "Dummy values" GarageFinish
+my_train$GarageFinish[is.na(my_train$GarageFinish) == TRUE] <- 0
+my_train$GarageFinish[my_train$GarageFinish == 'Unf'] <- 1
+my_train$GarageFinish[my_train$GarageFinish == 'RFn'] <- 2
+my_train$GarageFinish[my_train$GarageFinish == 'Fin'] <- 3
+
+my_train$GarageFinish <- as.numeric(my_train$GarageFinish)
+
+#my_train$GarageFinish <- train$GarageFinish
+#unique(my_train$GarageFinish)
+
+# Test
+test$GarageFinish[is.na(test$GarageFinish) == TRUE] <- 0
+test$GarageFinish[test$GarageFinish == 'Unf'] <- 1
+test$GarageFinish[test$GarageFinish == 'RFn'] <- 2
+test$GarageFinish[test$GarageFinish == 'Fin'] <- 3
+
+test$GarageFinish <- as.numeric(test$GarageFinish)
+```
+
+```{r, echo=FALSE}
+#plot(my_train$GarageFinish, my_train$SalePrice)
+#boxplot(my_train$SalePrice ~ my_train$GarageFinish)
+```
+
+
+```{r}
+# Assining "Dummy values" GarageArea
+# Seems to have complete data
+
+#my_train$GarageArea <- train$GarageArea
+#unique(my_train$GarageArea)
+
+# Test
+test$GarageArea[is.na(test$GarageArea) == TRUE] <- mean(test$GarageArea, na.rm=TRUE) # Need to use mean
+```
+
+```{r, echo=FALSE}
+#plot(my_train$GarageArea, my_train$SalePrice)
+#boxplot(my_train$SalePrice ~ my_train$GarageArea)
+
+
+#my_train[my_train$GarageArea > 1350,] 
+my_train$GarageArea[my_train$GarageArea >= 1390] <- mean(my_train$GarageArea[my_train$GarageArea < 1390]) # This is an outlier that should be "removed", I will reassign the mean from the same column from the readings not including that value from now on
+```
+
+```{r}
+# Assining "Dummy values" PavedDrive
+#my_train$PavedDrive[is.na(my_train$PavedDrive) == TRUE] <- 0
+my_train$PavedDrive[my_train$PavedDrive == 'N'] <- 0
+my_train$PavedDrive[my_train$PavedDrive == 'P'] <- 1
+my_train$PavedDrive[my_train$PavedDrive == 'Y'] <- 2
+
+my_train$PavedDrive <- as.numeric(my_train$PavedDrive)
+
+#my_train$PavedDrive <- train$PavedDrive
+#unique(my_train$PavedDrive)
+```
+
+```{r, echo=FALSE}
+#plot(my_train$PavedDrive, my_train$SalePrice)
+#boxplot(my_train$SalePrice ~ my_train$PavedDrive)
+```
+
+
+```{r}
+# Assining "Dummy values" WoodDeckSF
+# Seems to be complete data
+
+#my_train$WoodDeckSF <- train$WoodDeckSF
+#unique(my_train$WoodDeckSF)
+
+#test$WoodDeckSF[is.na(test$WoodDeckSF) == TRUE] <- 0
+```
+
+```{r, echo=FALSE}
+#plot(my_train$WoodDeckSF, my_train$SalePrice)
+#boxplot(my_train$SalePrice ~ my_train$WoodDeckSF)
+```
+
+
+```{r}
+# Assining "Dummy values" PoolArea
+# Seems to be complete data
+
+#my_train$PoolArea <- train$PoolArea
+#unique(my_train$PoolArea)
+```
+
+```{r, echo=FALSE}
+#plot(my_train$PoolArea, my_train$SalePrice)
+#boxplot(my_train$SalePrice ~ my_train$WoodDeckSF)
+```
+
+
+```{r}
+# Assining "Dummy values" MoSold
+# Seems to be complete data
+
+#my_train$MoSold <- train$MoSold
+#unique(my_train$MoSold)
+```
+
+```{r, echo=FALSE}
+#plot(my_train$MoSold, my_train$SalePrice)
+#boxplot(my_train$SalePrice ~ my_train$MoSold)
+```
+
+
+```{r}
+# Assining "Dummy values" YrSold
+# Seems to be complete data
+
+#my_train$YrSold <- train$YrSold
+#unique(my_train$YrSold)
+```
+
+```{r, echo=FALSE}
+#plot(my_train$YrSold, my_train$SalePrice)
+#boxplot(my_train$SalePrice ~ my_train$YrSold)
+```
+
+
+```{r}
+# Assining "Dummy values" SaleType
+#my_train$SaleType[is.na(my_train$SaleType) == TRUE] <- 0
+my_train$SaleType[my_train$SaleType == 'Oth'] <- 0
+my_train$SaleType[my_train$SaleType == 'ConLD'] <- 1
+my_train$SaleType[my_train$SaleType == 'ConLI'] <- 2
+my_train$SaleType[my_train$SaleType == 'ConLw'] <- 3
+my_train$SaleType[my_train$SaleType == 'Con'] <- 4
+my_train$SaleType[my_train$SaleType == 'COD'] <- 5
+my_train$SaleType[my_train$SaleType == 'New'] <- 6
+my_train$SaleType[my_train$SaleType == 'VWD'] <- 7
+my_train$SaleType[my_train$SaleType == 'CWD'] <- 8
+my_train$SaleType[my_train$SaleType == 'WD'] <- 9
+
+my_train$SaleType <- as.numeric(my_train$SaleType)
+
+#my_train$SaleType <- train$SaleType
+#unique(my_train$SaleType)
+```
+
+```{r, echo=FALSE}
+#plot(my_train$SaleType, my_train$SalePrice)
+#boxplot(my_train$SalePrice ~ my_train$SaleType)
+```
+
+
+```{r}
+# Assining "Dummy values" SaleCondition
+#my_train$SaleCondition[is.na(my_train$SaleCondition) == TRUE] <- 0
+my_train$SaleCondition[my_train$SaleCondition == 'Partial'] <- 0
+my_train$SaleCondition[my_train$SaleCondition == 'Family'] <- 1
+my_train$SaleCondition[my_train$SaleCondition == 'Alloca'] <- 2
+my_train$SaleCondition[my_train$SaleCondition == 'AdjLand'] <- 3
+my_train$SaleCondition[my_train$SaleCondition == 'Abnorml'] <- 4
+my_train$SaleCondition[my_train$SaleCondition == 'Normal'] <- 5
+
+my_train$SaleCondition <- as.numeric(my_train$SaleCondition)
+
+#my_train$SaleCondition <- train$SaleCondition
+#unique(my_train$SaleCondition)
+```
+
+```{r, echo=FALSE}
+#plot(my_train$SaleCondition, my_train$SalePrice)
+#boxplot(my_train$SalePrice ~ my_train$SaleCondition)
+```
+
+```{r}
+# Assining "Dummy values" PorchSF
+#my_train$PorchSF[is.na(my_train$PorchSF) == TRUE] <- 0
+
+#my_train$PorchSF <- train$PorchSF
+#unique(my_train$PorchSF)
+```
+
+```{r, echo=FALSE}
+#plot(my_train$PorchSF, my_train$SalePrice)
+#boxplot(my_train$SalePrice ~ my_train$PorchSF)
+```
+
+
+```{r}
+str(my_train)
+```
+
+
+
+## Sampling train (80%) / test (20%) data
+
+```{r}
+# Utilities do not add any extra info.
+my_train <- subset(my_train, select = names(my_train) != 'Utilities')
+```
+
+
+```{r}
+set.seed(101) # Set Seed so that same sample can be reproduced in future also
+# Now Selecting 80% of data as sample from total 'n' rows of the data  
+sample <- sample(nrow(my_train), round(nrow(my_train) * 0.8,0), replace = FALSE)
+t_train <- my_train[sample, ]
+t_test <- my_train[-sample, ]
+```
+
+
+
+```{r, warning=FALSE}
+cor_res <- cor(t_train, method="pearson")
+#round(cor_res, 2)
+```
+
+
+
+
+
+```{r, warning =FALSE, echo=FALSE}
+#cor_res <- data.frame(cor_res)
+corrplot(cor_res, type = "upper", method="circle", order = "hclust", tl.col = "black", tl.srt = 45)
+```
+
+From the above graph we can visualize some strong correlations, some positive and some negative.
+
+From now on, I will focus on the positive correlations only.
+
+```{r}
+cor_res1 <- data.frame(cor_res)
+cor_res1 <- cor_res1['SalePrice']
+cor_res1
+```
+
+The list of variable that I will start this model is listed below and I will take the variable with a "moderate" correlation related to SalePrice.
+
+```{r}
+cor_res1 <- subset(cor_res1, SalePrice > .25)
+cor_res1
+```
+
+```{r}
+lm_columns <- rownames(cor_res1)
+lm_columns
+```
+
+I will exclude SalePrice since that's the variable we want to predict.
+
+```{r}
+t_train1 <- t_train[lm_columns]
+home_price.lm <- lm(SalePrice ~ LotFrontage + LotShape + OverallQual + YearBuilt + YearRemodAdd + MasVnrArea + ExterQual + BsmtQual + TotalBsmtSF + HeatingQC + X1stFlrSF + GrLivArea + FullBath + KitchenQual + TotRmsAbvGrd + Fireplaces + GarageType + GarageFinish + GarageArea + WoodDeckSF, data = t_train1)
+```
+
+
+```{r}
+summary(home_price.lm)
+```
+
+From the above, we can notice how there's a good Multiple R-squared of 0.841, also, the p-value is very low and the Median is not too far odd from zero.
+
+I will proceed to continue with backward elimination.
+
+```{r}
+home_price.lm <- update(home_price.lm, .~. -GarageFinish, data = t_train1)
+summary(home_price.lm)
+```
+
+```{r}
+home_price.lm <- update(home_price.lm, .~. -HeatingQC, data = t_train1)
+summary(home_price.lm)
+```
+
+```{r}
+home_price.lm <- update(home_price.lm, .~. -TotRmsAbvGrd, data = t_train1)
+summary(home_price.lm)
+```
+
+```{r}
+home_price.lm <- update(home_price.lm, .~. -GarageType, data = t_train1)
+summary(home_price.lm)
+```
+
+```{r}
+home_price.lm <- update(home_price.lm, .~. -YearBuilt, data = t_train1)
+summary(home_price.lm)
+```
+
+## First Linear Model
+
+My first cut for the final model in this case has a "near zero" Median which is slightly under performing than others but I will consider this as "near" zero. A very good R squared and very to extremely good p-values.
+
+
+
+**Plots**
+
+```{r}
+plot(fitted(home_price.lm),resid(home_price.lm))
+```
+
+```{r}
+qqnorm(resid(home_price.lm))
+qqline(resid(home_price.lm))
+```
+
+As we can notice the majority of points are "near" zero and follow the Quantile to Quantile line with an exception to some extreme (This linear model is not perfect but it does a good job over all).
+
+**Predicting results from the model**
+
+```{r}
+predicted.SalePrice <- predict(home_price.lm, newdata=t_test)
+summary(predicted.SalePrice)
+```
+
+```{r}
+delta <- predicted.SalePrice - t_test$SalePrice
+summary(delta)
+```
+
+**Considence interval**
+
+```{r}
+t.test(predicted.SalePrice, conf.level = 0.95)
+```
+
+```{r}
+plot(delta)
+```
+
+
+
+
+# Final Test
+
+**Predicting results from the model**
+
+```{r}
+#colnames(test)
+```
+
+
+```{r}
+predicted.SalePrice <- predict(home_price.lm, newdata=test)
+summary(predicted.SalePrice)
+```
+
+```{r}
+predicted.SalePrice[predicted.SalePrice < 0]
+```
+
+```{r}
+#test[388,]
+```
+
+
+```{r}
+test$SalePrice <- predicted.SalePrice
+```
+
+
+```{r}
+summary(predicted.SalePrice)
+summary(train$SalePrice)
+```
+
+**Confidence interval**
+
+```{r}
+t.test(predicted.SalePrice, conf.level = 0.95)
+```
+
+## Export csv
+
+```{r}
+my_file <- test[c('Id', 'SalePrice')]
+
+write.csv(my_file, file = "MyPrediction.csv",row.names=FALSE)
+```
+
+
+# Kaggle Score
+
+Your submission scored 0.45304.
+
