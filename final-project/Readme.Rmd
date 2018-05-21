@@ -1,1 +1,10 @@
+# Final Project
 
+Masters in Data Science
+CUNY SPS
+Data 605, Spring 2018
+
+**Kaggle Competition: Home Prices - Regression Model**
+
+Author: Duubar Villalobos Jimenez
+mydvtech@gmail.com
